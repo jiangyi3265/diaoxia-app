@@ -10,13 +10,13 @@
     </scroll-view>
 
     <view class="wrap">
-      <view class="notice">有效会员每天最多预约一个时段；提交后由服务端锁定座位。</view>
+      <view class="notice">{{ availabilityRule || '有效会员每天最多预约一个时段；完成到店签到后，可在本人场次结束前10分钟起追加预约当日后续空位。' }}</view>
       <view class="section"><text>选择时段</text></view>
       <view v-if="loading" class="empty">正在获取可约时段…</view>
       <view v-else-if="slots.length === 0" class="empty">该门店尚未配置可预约时段</view>
       <view v-else class="slot-grid">
-        <view v-for="(slot, index) in slots" :key="slot.slotId" class="slot" :class="{ on: selSlot === index, full: slot.booked >= slot.total }" @click="pickSlot(index)">
-          <text>{{ slot.time }}</text><text>{{ slot.booked >= slot.total ? '已约满' : `剩余 ${slot.total - slot.booked} 座` }}</text>
+        <view v-for="(slot, index) in slots" :key="slot.slotId" class="slot" :class="{ on: selSlot === index, full: !canBookSlot(slot) }" @click="pickSlot(index)">
+          <text>{{ slot.time }}</text><text>{{ slot.booked >= slot.total ? '已约满' : (!slot.bookable ? '已开始' : `剩余 ${slot.total - slot.booked} 座`) }}</text>
         </view>
       </view>
 
@@ -41,7 +41,7 @@ import { appRequest, ensureMemberSession, publicRequest, showRequestError } from
 
 export default {
   data() {
-    return { storeId: null, dates: [], selDate: 0, slots: [], selSlot: 0, seats: [], curSeat: null, loading: true, submitting: false }
+    return { storeId: null, dates: [], selDate: 0, slots: [], selSlot: 0, seats: [], curSeat: null, loading: true, submitting: false, availabilityRule: '', notificationTemplateId: '' }
   },
   computed: {
     selectedDate() { return this.dates[this.selDate] || {} },
@@ -63,17 +63,25 @@ export default {
     },
     async initialize() {
       try {
-        const stores = await publicRequest({ url: '/app/stores' })
+        const [stores, notificationSettings] = await Promise.all([
+          publicRequest({ url: '/app/stores' }),
+          publicRequest({ url: '/app/notification-settings' })
+        ])
         if (!stores.length) throw new Error('门店尚未配置，请联系商家')
         this.storeId = stores[0].storeId
+        this.notificationTemplateId = notificationSettings.reservationReminderTemplateId || ''
         await this.loadAvailability()
       } catch (error) { showRequestError(error) } finally { this.loading = false }
     },
     async loadAvailability() {
       if (!this.storeId || !this.selectedDate.value) return
       const data = await publicRequest({ url: `/app/stores/${this.storeId}/availability`, data: { date: this.selectedDate.value } })
-      this.slots = data.slots.map((slot) => ({ slotId: slot.slotId, time: `${slot.startTime}-${slot.endTime}`, total: Number(slot.totalCount), booked: Number(slot.bookedCount) }))
-      if (!this.selectedSlot || this.selectedSlot.booked >= this.selectedSlot.total) this.selSlot = 0
+      const selectedSlotId = this.selectedSlot && this.selectedSlot.slotId
+      this.slots = data.slots.map((slot) => ({ slotId: slot.slotId, time: `${slot.startTime}-${slot.endTime}`, total: Number(slot.totalCount), booked: Number(slot.bookedCount), bookable: slot.bookable !== false }))
+      this.availabilityRule = data.sameDayRolloverRule || this.availabilityRule
+      let selectedIndex = this.slots.findIndex((slot) => slot.slotId === selectedSlotId)
+      if (selectedIndex < 0 || !this.canBookSlot(this.slots[selectedIndex])) selectedIndex = this.slots.findIndex((slot) => this.canBookSlot(slot))
+      this.selSlot = selectedIndex >= 0 ? selectedIndex : 0
       const slotId = this.selectedSlot && this.selectedSlot.slotId
       this.seats = data.seats.map((seat) => ({
         seatId: seat.seatId,
@@ -85,10 +93,11 @@ export default {
     },
     pickDate(index) { this.selDate = index; this.loadAvailability().catch(showRequestError) },
     pickSlot(index) {
-      if (this.slots[index].booked >= this.slots[index].total) { uni.showToast({ title: '该时段已约满', icon: 'none' }); return }
+      if (!this.canBookSlot(this.slots[index])) { uni.showToast({ title: this.slots[index].booked >= this.slots[index].total ? '该时段已约满' : '该时段已开始，不能预约', icon: 'none' }); return }
       this.selSlot = index
       this.loadAvailability().catch(showRequestError)
     },
+    canBookSlot(slot) { return !!slot && slot.bookable && slot.booked < slot.total },
     pickSeat(seat) {
       if (seat.status === 'booked') return
       this.curSeat = this.curSeat && this.curSeat.seatId === seat.seatId ? null : seat
@@ -98,10 +107,20 @@ export default {
       if (!this.curSeat || !this.selectedSlot || this.submitting) return
       this.submitting = true
       try {
+        // 必须在点击事件中立即调用，否则微信不会展示订阅授权窗口。
+        const subscription = this.requestReminderSubscription()
         await ensureMemberSession()
         const reservation = await appRequest({ url: '/app/reservations', method: 'POST', data: { storeId: this.storeId, slotId: this.selectedSlot.slotId, seatId: this.curSeat.seatId, date: this.selectedDate.value } })
+        await subscription
         uni.navigateTo({ url: `/pages/reserve/detail?reservationNo=${reservation.reservationNo}` })
       } catch (error) { showRequestError(error) } finally { this.submitting = false }
+    },
+    requestReminderSubscription() {
+      const templateId = this.notificationTemplateId
+      if (!templateId || typeof uni.requestSubscribeMessage !== 'function') return Promise.resolve()
+      return new Promise((resolve) => {
+        uni.requestSubscribeMessage({ tmplIds: [templateId], complete: () => resolve() })
+      })
     }
   }
 }
