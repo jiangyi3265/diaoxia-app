@@ -73,13 +73,14 @@ export default {
 	box-shadow: 0 -6rpx 26rpx rgba(16, 78, 74, 0.05);
 }
 .tabbar-inner {
-	display: flex;
-	align-items: flex-end;
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	align-items: center;
 	height: 108rpx;
 	padding: 0 12rpx;
 }
 .tab-item {
-	flex: 1;
+	width: 100%;
 	height: 108rpx;
 	display: flex;
 	flex-direction: column;
@@ -107,14 +108,16 @@ export default {
 	display: none;
 }
 .tab-item.is-center {
-	flex: 1;
-	justify-content: flex-start;
+	justify-content: center;
 	overflow: visible;
 }
 .center-btn {
+	position: absolute;
+	top: -44rpx;
+	left: 50%;
 	width: 104rpx;
 	height: 104rpx;
-	margin-top: -44rpx;
+	transform: translateX(-50%);
 	border-radius: 34rpx;
 	display: flex;
 	align-items: center;
@@ -124,7 +127,7 @@ export default {
 	border: 6rpx solid #fff;
 }
 .center-label {
-	margin-top: 8rpx;
+	margin-top: 58rpx;
 	font-size: 21rpx;
 	font-weight: 600;
 	color: var(--xy-primary);

@@ -62,9 +62,11 @@ export default {
 	background: linear-gradient(135deg, var(--xy-primary-bright), var(--xy-primary) 55%, var(--xy-lake));
 }
 .bar {
+	position: relative;
 	height: 88rpx;
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
 	padding: 0 20rpx;
 }
 .side {
@@ -75,12 +77,18 @@ export default {
 }
 .side.right { justify-content: flex-end; }
 .titles {
-	flex: 1;
+	position: absolute;
+	top: 0;
+	left: 50%;
+	width: 52%;
+	height: 88rpx;
+	transform: translateX(-50%);
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
+	pointer-events: none;
 }
-.title { font-size: 33rpx; font-weight: 700; letter-spacing: 0.5rpx; }
+.title { width: 100%; overflow: hidden; font-size: 33rpx; font-weight: 700; letter-spacing: 0.5rpx; line-height: 1.25; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .subtitle { font-size: 21rpx; margin-top: 2rpx; }
 </style>
