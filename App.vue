@@ -2,6 +2,13 @@
 	export default {
 		onLaunch: function() {
 			try {
+				// 本次登录流程升级后，让存量用户只重新确认一次微信登录。
+				const loginGateVersion = 'xy.explicit.login.v1'
+				if (uni.getStorageSync('xy.login.gate') !== loginGateVersion) {
+					uni.removeStorageSync('xy.member.token')
+					uni.removeStorageSync('xy.member.profile')
+					uni.setStorageSync('xy.login.gate', loginGateVersion)
+				}
 				const sys = uni.getSystemInfoSync()
 				const app = getApp()
 				app.globalData = app.globalData || {}

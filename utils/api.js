@@ -24,7 +24,9 @@ export function request(options) {
 					resolve(body.data)
 					return
 				}
-				reject(new Error(body.msg || '服务请求失败'))
+				const error = new Error(body.msg || '服务请求失败')
+				error.code = body.code || response.statusCode
+				reject(error)
 			},
 			fail: () => reject(new Error('网络连接失败，请检查网络后重试'))
 		})
@@ -38,9 +40,17 @@ export function appRequest(options) {
 	return request(Object.assign({}, options, { header: Object.assign({}, options.header || {}, { 'X-App-Token': token }) }))
 }
 
-export function ensureMemberSession() {
-	const token = uni.getStorageSync('xy.member.token')
-	if (token) return Promise.resolve(token)
+export function hasMemberSession() {
+	return !!uni.getStorageSync('xy.member.token')
+}
+
+export function clearMemberSession() {
+	uni.removeStorageSync('xy.member.token')
+	uni.removeStorageSync('xy.member.profile')
+}
+
+export function createMemberSession() {
+	clearMemberSession()
 	return new Promise((resolve, reject) => {
 		uni.login({
 			provider: 'weixin',
@@ -48,12 +58,18 @@ export function ensureMemberSession() {
 				.then((data) => {
 					uni.setStorageSync('xy.member.token', data.memberToken)
 					uni.setStorageSync('xy.member.profile', data.member)
-					resolve(data.memberToken)
+					resolve(data)
 				})
 				.catch(reject),
 			fail: () => reject(new Error('微信登录失败，请重试'))
 		})
 	})
+}
+
+export function ensureMemberSession() {
+	const token = uni.getStorageSync('xy.member.token')
+	if (token) return Promise.resolve(token)
+	return createMemberSession().then((data) => data.memberToken)
 }
 
 export function showRequestError(error) {
