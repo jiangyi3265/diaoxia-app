@@ -10,7 +10,7 @@
     </scroll-view>
 
     <view class="wrap">
-      <view class="notice">{{ availabilityRule || '有效会员每天最多预约一个时段；完成到店签到后，可在本人场次结束前10分钟起追加预约当日后续空位。' }}</view>
+      <view class="notice">{{ availabilityRule || '每位会员同时只能保留1个待到场预约；到店签到后，自当前场次结束前10分钟起，可不限次续约当天更晚的空余时段。' }}</view>
       <view class="section"><text>选择时段</text></view>
       <view v-if="loading" class="empty">正在获取可约时段…</view>
       <view v-else-if="slots.length === 0" class="empty">该门店尚未配置可预约时段</view>
