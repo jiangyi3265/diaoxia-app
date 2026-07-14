@@ -53,7 +53,7 @@ export default {
   },
   onShow() {
     this.active = true
-    this.refresh(true)
+    this.refresh(false)
   },
   onHide() {
     this.active = false
@@ -125,8 +125,8 @@ export default {
       } catch (error) {
         this.code = ''
         this.remaining = 0
-        if (!silent) showRequestError(error)
-        if (this.active) this.retryTimer = setTimeout(() => this.refresh(true), 2000)
+        if (!silent || (error && error.code)) showRequestError(error)
+        if (this.active && (!error || !error.code)) this.retryTimer = setTimeout(() => this.refresh(true), 2000)
       } finally {
         this.loading = false
       }
