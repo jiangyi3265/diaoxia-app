@@ -4,7 +4,7 @@
     <view v-if="order" class="content">
       <view class="status-panel" :class="statusTone">
         <view class="status-icon"><xy-icon :name="statusIcon" :size="46" color="#f3fbf8" /></view>
-        <view><text>{{ labels[order.status] || order.status }}</text><text>{{ statusNote }}</text></view>
+        <view><text>{{ displayStatus }}</text><text>{{ statusNote }}</text></view>
       </view>
 
       <view v-if="demoEnabled && order.status === 'PENDING_PAYMENT'" class="demo-tip">
@@ -33,6 +33,10 @@
         <view><text>配送费</text><text>¥{{ order.freightAmount }}</text></view>
         <view class="total"><text>实付金额</text><text>¥{{ order.status === 'PENDING_PAYMENT' ? order.payableAmount : order.paidAmount }}</text></view>
       </view>
+      <view v-if="order.afterSaleStatus" class="refund-section">
+        <view><xy-icon name="refresh" :size="32" color="#0b756e" /><text>{{ refundLabels[order.afterSaleStatus] || '退款状态已更新' }}</text></view>
+        <text>{{ refundNote }}</text>
+      </view>
       <view class="bottom-space" />
     </view>
 
@@ -42,7 +46,7 @@
       <button v-if="order.status === 'PENDING_PAYMENT'" class="secondary" @click="cancelOrder">取消订单</button>
       <button v-if="order.status === 'PENDING_PAYMENT'" class="primary" :loading="paying" @click="pay">{{ demoEnabled ? '演示支付' : '微信支付' }} ¥{{ order.payableAmount }}</button>
       <button v-if="order.status === 'SHIPPED'" class="primary" @click="receipt">确认收货</button>
-      <button v-if="['PAID','SHIPPED','COMPLETED'].includes(order.status)" class="secondary" @click="aftersale">申请售后</button>
+      <button v-if="canRefund" class="secondary" @click="refund">申请退款</button>
     </view>
   </view>
 </template>
@@ -54,17 +58,23 @@ export default {
   data() {
     return {
       order: null, orderNo: '', demoEnabled: false, paying: false,
-      labels: { PENDING_PAYMENT: '等待支付', PAID: '等待发货', SHIPPED: '商品已发出', COMPLETED: '订单已完成', CANCELED: '订单已取消', AFTER_SALE: '售后处理中', REFUNDED: '订单已退款' }
+      labels: { PENDING_PAYMENT: '等待支付', PAID: '等待发货', SHIPPED: '商品已发出', COMPLETED: '订单已完成', CANCELED: '订单已取消', AFTER_SALE: '退款处理中', REFUNDED: '订单已退款' },
+      refundLabels: { PENDING:'退款申请审核中', REFUNDING:'退款处理中', APPROVED:'退款完成', REJECTED:'退款申请未通过', REFUND_FAILED:'退款失败' }
     }
   },
   computed: {
-    statusTone() { return ['CANCELED','REFUNDED'].includes(this.order.status) ? 'muted' : this.order.status === 'PENDING_PAYMENT' ? 'waiting' : 'success' },
+    displayStatus() { return this.refundLabels[this.order.afterSaleStatus] || this.labels[this.order.status] || this.order.status },
+    statusTone() { return ['CANCELED','REFUNDED'].includes(this.order.status) || this.order.afterSaleStatus === 'REJECTED' ? 'muted' : this.order.status === 'PENDING_PAYMENT' ? 'waiting' : 'success' },
     statusIcon() { return this.order.status === 'PENDING_PAYMENT' ? 'wallet' : ['CANCELED','REFUNDED'].includes(this.order.status) ? 'close' : 'check' },
     statusNote() {
+      const refundNotes = { PENDING:'商家会尽快审核你的退款申请', REFUNDING:'退款正在按原支付渠道处理', APPROVED:'退款已经处理完成', REJECTED:'可联系客服了解原因或重新申请', REFUND_FAILED:'请联系客服协助重新处理' }
+      if (this.order.afterSaleStatus && refundNotes[this.order.afterSaleStatus]) return refundNotes[this.order.afterSaleStatus]
       const notes = { PENDING_PAYMENT: '完成支付后，商家将开始处理订单', PAID: '商家正在准备商品，请耐心等待', SHIPPED: '请留意配送信息或到店领取', COMPLETED: '感谢你的购买，期待再次光临', CANCELED: '订单已关闭，库存已经恢复', AFTER_SALE: '商家正在处理你的售后申请', REFUNDED: '款项已按原流程退回' }
       return notes[this.order.status] || '订单状态已更新'
     },
-    availableActions() { return ['PENDING_PAYMENT','SHIPPED','PAID','COMPLETED'].includes(this.order.status) }
+    refundNote() { return this.statusNote },
+    canRefund() { return ['PAID','SHIPPED','COMPLETED'].includes(this.order.status) && !['PENDING','REFUNDING','APPROVED','REFUND_FAILED'].includes(this.order.afterSaleStatus) },
+    availableActions() { return ['PENDING_PAYMENT','SHIPPED'].includes(this.order.status) || this.canRefund }
   },
   onLoad(query) { this.orderNo = query.orderNo; this.initialize() },
   methods: {
@@ -86,11 +96,11 @@ export default {
     },
     cancelOrder() { uni.showModal({ title: '取消订单', content: '确定取消这个订单吗？', confirmColor: '#d45b55', success: async ({ confirm }) => { if (!confirm) return; try { await appRequest({ url: `/app/orders/${this.orderNo}/cancel`, method: 'POST' }); await this.load() } catch (error) { showRequestError(error) } } }) },
     async receipt() { try { await appRequest({ url: `/app/orders/${this.orderNo}/receipt`, method: 'POST' }); await this.load() } catch (error) { showRequestError(error) } },
-    aftersale() { uni.navigateTo({ url: `/pages/order/aftersale?orderNo=${this.orderNo}` }) }
+    refund() { uni.navigateTo({ url: `/pages/order/aftersale?orderNo=${this.orderNo}` }) }
   }
 }
 </script>
 
 <style scoped>
-.page{min-height:100vh;background:#eef5f3}.content{padding:18rpx 26rpx}.status-panel{display:flex;align-items:center;gap:20rpx;padding:34rpx 30rpx;border-radius:30rpx;background:#0c8f85;color:#f4fbf9}.status-panel.waiting{background:#bd7648}.status-panel.muted{background:#6d7e7a}.status-icon{display:flex;align-items:center;justify-content:center;width:82rpx;height:82rpx;border-radius:26rpx;background:rgba(244,251,249,.14)}.status-panel>view:last-child{display:flex;flex:1;flex-direction:column;gap:8rpx}.status-panel text:first-child{font-size:32rpx;font-weight:850}.status-panel text:last-child{font-size:21rpx;opacity:.8}.demo-tip{display:flex;align-items:center;gap:12rpx;margin-top:18rpx;padding:19rpx 22rpx;border-radius:20rpx;background:#dcf1ed;color:#51716b;font-size:22rpx}.goods-section,.info-section,.amount-section{margin-top:20rpx;padding:10rpx 24rpx;border-radius:28rpx;background:#f9fcfb}.goods-row{display:flex;align-items:center;gap:18rpx;padding:18rpx 0}.goods-row image{width:112rpx;height:112rpx;border-radius:19rpx;background:#dce8e5}.goods-row>view{display:flex;flex:1;min-width:0;flex-direction:column;gap:10rpx}.goods-row>view text:first-child{font-size:27rpx;font-weight:750}.goods-row>view text:last-child{color:#81908d;font-size:22rpx}.goods-row>text{color:#263633;font-size:26rpx;font-weight:750}.info-section,.amount-section{padding:14rpx 26rpx}.info-section>view,.amount-section>view{display:flex;justify-content:space-between;gap:30rpx;padding:16rpx 0;color:#687a76;font-size:23rpx}.info-section>view>text:last-child,.amount-section>view>text:last-child{color:#273633;text-align:right}.info-section .multiline{max-width:430rpx;line-height:1.55}.copyable{font-size:21rpx}.amount-section .discount>text:last-child{color:#d9613d}.amount-section .total{margin-top:7rpx;padding-top:23rpx;border-top:1rpx solid #e0e9e7;color:#253532;font-weight:750}.amount-section .total>text:last-child{color:#df594c;font-size:32rpx;font-weight:900}.bottom-space{height:145rpx}.empty-state{display:flex;flex-direction:column;align-items:center;gap:22rpx;padding:160rpx 30rpx;color:#778985}.action-bar{position:fixed;z-index:10;right:0;bottom:0;left:0;display:flex;justify-content:flex-end;gap:16rpx;padding:18rpx 26rpx calc(18rpx + env(safe-area-inset-bottom));background:#f8fbfa;box-shadow:0 -10rpx 30rpx rgba(23,73,68,.08)}.action-bar button{height:84rpx;margin:0;padding:0 30rpx;border-radius:23rpx;font-size:25rpx;font-weight:750;line-height:84rpx}.primary{min-width:300rpx;background:#0b8d84;color:#f4fbf9}.secondary{border:1rpx solid #d5e1de;background:#f8fbfa;color:#596d68}
+.page{min-height:100vh;background:#eef5f3}.content{padding:18rpx 26rpx}.status-panel{display:flex;align-items:center;gap:20rpx;padding:34rpx 30rpx;border-radius:30rpx;background:#0c8f85;color:#f4fbf9}.status-panel.waiting{background:#bd7648}.status-panel.muted{background:#6d7e7a}.status-icon{display:flex;align-items:center;justify-content:center;width:82rpx;height:82rpx;border-radius:26rpx;background:rgba(244,251,249,.14)}.status-panel>view:last-child{display:flex;flex:1;flex-direction:column;gap:8rpx}.status-panel text:first-child{font-size:32rpx;font-weight:850}.status-panel text:last-child{font-size:21rpx;opacity:.8}.demo-tip{display:flex;align-items:center;gap:12rpx;margin-top:18rpx;padding:19rpx 22rpx;border-radius:20rpx;background:#dcf1ed;color:#51716b;font-size:22rpx}.goods-section,.info-section,.amount-section{margin-top:20rpx;padding:10rpx 24rpx;border-radius:28rpx;background:#f9fcfb}.goods-row{display:flex;align-items:center;gap:18rpx;padding:18rpx 0}.goods-row image{width:112rpx;height:112rpx;border-radius:19rpx;background:#dce8e5}.goods-row>view{display:flex;flex:1;min-width:0;flex-direction:column;gap:10rpx}.goods-row>view text:first-child{font-size:27rpx;font-weight:750}.goods-row>view text:last-child{color:#81908d;font-size:22rpx}.goods-row>text{color:#263633;font-size:26rpx;font-weight:750}.info-section,.amount-section{padding:14rpx 26rpx}.info-section>view,.amount-section>view{display:flex;justify-content:space-between;gap:30rpx;padding:16rpx 0;color:#687a76;font-size:23rpx}.info-section>view>text:last-child,.amount-section>view>text:last-child{color:#273633;text-align:right}.info-section .multiline{max-width:430rpx;line-height:1.55}.copyable{font-size:21rpx}.amount-section .discount>text:last-child{color:#d9613d}.amount-section .total{margin-top:7rpx;padding-top:23rpx;border-top:1rpx solid #e0e9e7;color:#253532;font-weight:750}.amount-section .total>text:last-child{color:#df594c;font-size:32rpx;font-weight:900}.refund-section{margin-top:20rpx;padding:24rpx 26rpx;border-radius:25rpx;background:#e2f2ee;color:#57736d}.refund-section>view{display:flex;align-items:center;gap:12rpx;color:#1d4a42;font-size:25rpx;font-weight:750}.refund-section>text{display:block;margin-top:10rpx;font-size:21rpx;line-height:1.5}.bottom-space{height:145rpx}.empty-state{display:flex;flex-direction:column;align-items:center;gap:22rpx;padding:160rpx 30rpx;color:#778985}.action-bar{position:fixed;z-index:10;right:0;bottom:0;left:0;display:flex;justify-content:flex-end;gap:16rpx;padding:18rpx 26rpx calc(18rpx + env(safe-area-inset-bottom));background:#f8fbfa;box-shadow:0 -10rpx 30rpx rgba(23,73,68,.08)}.action-bar button{height:84rpx;margin:0;padding:0 30rpx;border-radius:23rpx;font-size:25rpx;font-weight:750;line-height:84rpx}.primary{min-width:300rpx;background:#0b8d84;color:#f4fbf9}.secondary{border:1rpx solid #d5e1de;background:#f8fbfa;color:#596d68}
 </style>

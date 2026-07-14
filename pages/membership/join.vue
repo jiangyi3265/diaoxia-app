@@ -9,16 +9,15 @@
 
     <view class="content">
       <view class="section-head">
-        <text class="section-title">选择会员方案</text>
-        <text class="section-note">到期前均可享受对应权益</text>
+        <text class="section-title">包月会员</text>
+        <text class="section-note">连续 30 天有效</text>
       </view>
 
-      <view v-if="plans.length" class="plan-list">
-        <view v-for="plan in plans" :key="plan.planId" class="plan-card" :class="{ selected: selected && selected.planId === plan.planId }" @click="selected = plan">
-          <view class="select-dot"><view class="select-inner" /></view>
+      <view v-if="selected" class="plan-list">
+        <view class="plan-card selected">
           <view class="plan-copy">
-            <view class="plan-row"><text class="plan-name">{{ plan.planName }}</text><text class="price"><text>¥</text>{{ plan.amount }}</text></view>
-            <text class="plan-detail">有效期 {{ plan.durationDays }} 天 · 每日基础预约 {{ plan.dailyReservationLimit }} 个时段</text>
+            <view class="plan-row"><text class="plan-name">{{ selected.planName }}</text><text class="price"><text>¥</text>{{ selected.amount }}</text></view>
+            <text class="plan-detail">开通后连续 {{ selected.durationDays }} 天享受会员权益</text>
           </view>
         </view>
       </view>
@@ -60,7 +59,8 @@ export default {
   methods: {
     async load() {
       try {
-        this.plans = await publicRequest({ url: '/app/membership-plans' })
+        const plans = await publicRequest({ url: '/app/membership-plans' })
+        this.plans = plans.filter((plan) => Number(plan.durationDays) === 30).slice(0, 1)
         this.selected = this.plans[0] || null
       } catch (error) {
         showRequestError(error)

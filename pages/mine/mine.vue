@@ -19,7 +19,7 @@
     <view class="section">
       <text class="section-title">我的服务</text>
       <view class="menu-list">
-        <view v-for="(item,index) in menus" :key="item.url" class="menu-row" @click="go(item.url)">
+        <view v-for="(item,index) in menus" :key="item.label" class="menu-row" @click="go(item.url)">
           <view class="menu-icon" :class="item.tone"><xy-icon :name="item.icon" :size="36" :color="item.color" :weight="1.8" /></view>
           <view class="menu-copy"><text class="menu-title">{{ item.label }}</text><text class="menu-note">{{ item.note }}</text></view>
           <view class="menu-arrow"><xy-icon name="chevron-right" :size="30" color="#91A39F" :weight="1.7" /></view>
@@ -45,9 +45,11 @@ export default {
         { label:'会员资料', note:'昵称、手机号与邀请码', url:'/pages/membership/profile', icon:'user', tone:'mint', color:'#0B756E' },
         { label:'我的预约', note:'查看场次、座位与签到码', url:'/pages/reserve/history', icon:'calendar-check', tone:'blue', color:'#32778C' },
         { label:'我的订单', note:'支付、配送与售后进度', url:'/pages/order/list', icon:'invoice', tone:'sand', color:'#94662E' },
+        { label:'退款/售后', note:'申请退款与查看处理进度', url:'/pages/order/list?view=refund', icon:'refresh', tone:'rose', color:'#A85B55' },
         { label:'消费账单', note:'会员与商城支付记录', url:'/pages/bills/bills', icon:'wallet', tone:'rose', color:'#A85B55' },
         { label:'收货地址', note:'管理商城配送地址', url:'/pages/order/address', icon:'location', tone:'mint', color:'#0B756E' },
-        { label:'邀请好友', note:'分享你的专属邀请码', url:'/pages/invite/invite', icon:'share', tone:'blue', color:'#32778C' }
+        { label:'邀请好友', note:'分享你的专属邀请码', url:'/pages/invite/invite', icon:'share', tone:'blue', color:'#32778C' },
+        { label:'联系客服', note:'微信客服与门店电话', url:'/pages/service/contact', icon:'headset', tone:'rose', color:'#A85B55' }
       ]
     }
   },

@@ -106,7 +106,7 @@
 		{
 			"path": "pages/order/aftersale",
 			"style": {
-				"navigationBarTitleText": "申请售后"
+				"navigationBarTitleText": "申请退款"
 			}
 		},
 		{
@@ -123,6 +123,12 @@
 		},
 		{
 			"path": "pages/invite/invite",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/service/contact",
 			"style": {
 				"navigationStyle": "custom"
 			}
