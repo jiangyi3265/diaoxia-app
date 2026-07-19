@@ -1,6 +1,8 @@
 // Vite/uni-app 会在构建阶段将 VITE_* 注入 import.meta.env；process.env 不会
 // 自动包含这些变量。默认值保证在微信开发者工具等非标准构建环境中也能访问生产 API。
 const apiBaseUrl = (import.meta.env.VITE_APP_API_BASE_URL || 'https://dx.oksja.cn').replace(/\/$/, '')
+const pendingInviteKey = 'xy.pending.invite'
+let redirectingToLogin = false
 
 function baseUrl() {
 	if (!apiBaseUrl) {
@@ -38,6 +40,27 @@ export const publicRequest = request
 export function appRequest(options) {
 	const token = uni.getStorageSync('xy.member.token')
 	return request(Object.assign({}, options, { header: Object.assign({}, options.header || {}, { 'X-App-Token': token }) }))
+		.catch((error) => {
+			if (Number(error && error.code) === 401) {
+				clearMemberSession()
+				redirectToLogin()
+			}
+			throw error
+		})
+}
+
+function redirectToLogin() {
+	if (redirectingToLogin) return
+	redirectingToLogin = true
+	setTimeout(() => {
+		const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
+		const current = pages.length ? pages[pages.length - 1].route : ''
+		if (current === 'pages/login/login') {
+			redirectingToLogin = false
+			return
+		}
+		uni.reLaunch({ url: '/pages/login/login' })
+	}, 0)
 }
 
 export function hasMemberSession() {
@@ -49,20 +72,36 @@ export function clearMemberSession() {
 	uni.removeStorageSync('xy.member.profile')
 }
 
-export function createMemberSession() {
-	clearMemberSession()
+function requestMemberSession(inviteCode) {
 	return new Promise((resolve, reject) => {
 		uni.login({
 			provider: 'weixin',
-			success: ({ code }) => request({ url: '/app/auth/session', method: 'POST', data: { code } })
+			success: ({ code }) => {
+				if (!code) { reject(new Error('微信登录未返回有效凭证')); return }
+				request({ url: '/app/auth/session', method: 'POST', data: { code, inviteCode: inviteCode || undefined } })
 				.then((data) => {
 					uni.setStorageSync('xy.member.token', data.memberToken)
 					uni.setStorageSync('xy.member.profile', data.member)
+					uni.removeStorageSync(pendingInviteKey)
+					redirectingToLogin = false
 					resolve(data)
 				})
-				.catch(reject),
+				.catch(reject)
+			},
 			fail: () => reject(new Error('微信登录失败，请重试'))
 		})
+	})
+}
+
+export function createMemberSession() {
+	clearMemberSession()
+	const inviteCode = String(uni.getStorageSync(pendingInviteKey) || '').trim()
+	return requestMemberSession(inviteCode).catch((error) => {
+		if (inviteCode && String((error && error.message) || '').includes('邀请码')) {
+			uni.removeStorageSync(pendingInviteKey)
+			return requestMemberSession('')
+		}
+		throw error
 	})
 }
 

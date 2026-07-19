@@ -28,13 +28,13 @@
 		{
 			"path": "pages/reserve/history",
 			"style": {
-				"navigationBarTitleText": "我的预约"
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/reserve/detail",
 			"style": {
-				"navigationBarTitleText": "预约详情"
+				"navigationStyle": "custom"
 			}
 		},
 		{
@@ -52,7 +52,7 @@
 		{
 			"path": "pages/mall/confirm",
 			"style": {
-				"navigationBarTitleText": "确认订单"
+				"navigationStyle": "custom"
 			}
 		},
 		{
@@ -82,37 +82,37 @@
 		{
 			"path": "pages/membership/profile",
 			"style": {
-				"navigationBarTitleText": "会员档案"
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/order/list",
 			"style": {
-				"navigationBarTitleText": "我的订单"
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/order/detail",
 			"style": {
-				"navigationBarTitleText": "订单详情"
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/order/address",
 			"style": {
-				"navigationBarTitleText": "收货地址"
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/order/aftersale",
 			"style": {
-				"navigationBarTitleText": "申请退款"
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/bills/bills",
 			"style": {
-				"navigationBarTitleText": "消费账单"
+				"navigationStyle": "custom"
 			}
 		},
 		{

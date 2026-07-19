@@ -23,16 +23,16 @@
       </view>
 
       <view v-else class="empty-state">
-        <uni-icons type="info" size="32" color="#8ba09c" />
+        <xy-icon name="info" :size="58" color="#8ba09c" />
         <text>暂无可购买会员方案</text>
       </view>
 
       <view class="rights-card">
         <text class="rights-title">会员权益</text>
         <view class="rights-grid">
-          <view class="right-item"><view class="right-icon"><uni-icons type="calendar" size="22" color="#0a968b" /></view><text>优先预约</text></view>
-          <view class="right-item"><view class="right-icon"><uni-icons type="cart" size="22" color="#0a968b" /></view><text>商城折扣</text></view>
-          <view class="right-item"><view class="right-icon"><uni-icons type="vip" size="22" color="#0a968b" /></view><text>专属动态码</text></view>
+          <view class="right-item"><view class="right-icon"><xy-icon name="calendar-check" :size="38" color="#0a968b" /></view><text>优先预约</text></view>
+          <view class="right-item"><view class="right-icon"><xy-icon name="cart" :size="38" color="#0a968b" /></view><text>商城折扣</text></view>
+          <view class="right-item"><view class="right-icon"><xy-icon name="qrcode" :size="38" color="#0a968b" /></view><text>专属动态码</text></view>
         </view>
       </view>
 

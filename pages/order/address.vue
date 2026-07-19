@@ -19,13 +19,13 @@
             <text class="address-text">{{ item.province }}{{ item.city }}{{ item.district }}{{ item.detail }}</text>
           </view>
           <view class="edit-button" @click="edit(item)">
-            <uni-icons type="compose" size="20" color="#677a78" />
+            <xy-icon name="edit" :size="40" color="#677a78" />
           </view>
         </view>
       </view>
 
       <view v-else class="empty-state">
-        <view class="empty-icon"><uni-icons type="location" size="32" color="#11a89c" /></view>
+        <view class="empty-icon"><xy-icon name="location" :size="60" color="#11a89c" /></view>
         <text class="empty-title">还没有收货地址</text>
         <text class="empty-note">新增地址后，商城下单会更方便</text>
       </view>
@@ -40,7 +40,7 @@
         <view class="sheet-handle" />
         <view class="sheet-head">
           <text class="sheet-title">{{ form.addressId ? '编辑地址' : '新增地址' }}</text>
-          <view class="close" @click="closeEditor"><uni-icons type="closeempty" size="24" color="#637270" /></view>
+          <view class="close" @click="closeEditor"><xy-icon name="close" :size="44" color="#637270" /></view>
         </view>
 
         <view class="form-card">

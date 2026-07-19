@@ -31,7 +31,7 @@
       </view>
 
       <view class="tip-card">
-        <uni-icons type="info" size="20" color="#0f9f94" />
+        <xy-icon name="info" :size="36" color="#0f9f94" />
         <text>完成到店签到后，会员当天可按规则续约有空位的场次。</text>
       </view>
     </view>
