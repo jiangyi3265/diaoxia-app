@@ -1,6 +1,6 @@
 // Vite/uni-app 会在构建阶段将 VITE_* 注入 import.meta.env；process.env 不会
 // 自动包含这些变量。默认值保证在微信开发者工具等非标准构建环境中也能访问生产 API。
-const apiBaseUrl = (import.meta.env.VITE_APP_API_BASE_URL || 'https://dx.oksja.cn').replace(/\/$/, '')
+const apiBaseUrl = (import.meta.env.VITE_APP_API_BASE_URL || 'https://diaox.daioxia.cn').replace(/\/$/, '')
 const pendingInviteKey = 'xy.pending.invite'
 let redirectingToLogin = false
 
