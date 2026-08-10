@@ -1,4 +1,4 @@
-name: Build and upload WeChat mini program
+name: Build WeChat mini program
 
 on:
   push:
@@ -13,7 +13,6 @@ permissions:
   contents: read
 
 env:
-  WECHAT_APPID: wx56d182594c05ce23
   VITE_APP_API_BASE_URL: https://diaox.daioxia.cn
 
 jobs:
@@ -46,27 +45,3 @@ jobs:
           path: unpackage/dist/build/mp-weixin
           if-no-files-found: error
           retention-days: 14
-
-      - name: Prepare WeChat upload key
-        env:
-          WECHAT_PRIVATE_KEY: ${{ secrets.WECHAT_PRIVATE_KEY }}
-        run: |
-          if [ -z "$WECHAT_PRIVATE_KEY" ]; then
-            echo "::error::Missing repository secret WECHAT_PRIVATE_KEY"
-            exit 1
-          fi
-          umask 077
-          printf '%s' "$WECHAT_PRIVATE_KEY" > "$RUNNER_TEMP/private.$WECHAT_APPID.key"
-
-      - name: Upload to WeChat
-        env:
-          WECHAT_PRIVATE_KEY_PATH: ${{ runner.temp }}/private.wx56d182594c05ce23.key
-          WECHAT_VERSION: 1.0.${{ github.run_number }}
-        run: |
-          npx --yes miniprogram-ci@2.1.31 upload \
-            --pp unpackage/dist/build/mp-weixin \
-            --pkp "$WECHAT_PRIVATE_KEY_PATH" \
-            --appid "$WECHAT_APPID" \
-            --uv "$WECHAT_VERSION" \
-            -r 1 \
-            --use-project-config true
