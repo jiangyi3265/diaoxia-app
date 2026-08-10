@@ -32,6 +32,7 @@ jobs:
       - name: Install dependencies and build
         run: |
           npm ci
+          npm audit --audit-level=high
           npm run build:mp-weixin
 
       - name: Verify production API domain
