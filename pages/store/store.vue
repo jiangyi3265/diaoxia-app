@@ -4,12 +4,14 @@
     <view class="hero">
       <image src="/static/img/store2.jpg" mode="aspectFill" />
       <view class="hero-shade" />
-      <view class="hero-copy"><text>钓虾生活馆</text><text>舒适钓位、轻松聚会，等你到店</text></view>
+      <view class="hero-copy"><text>虾语 · 钓虾生活馆</text><text>舒适钓位、轻松聚会，等你到店</text></view>
     </view>
 
     <view class="content">
       <view class="section-head"><text>营业门店</text><text>共 {{ stores.length }} 家</text></view>
-      <view v-for="store in stores" :key="store.storeId" class="store-row">
+      <xy-state v-if="loading" type="loading" />
+      <xy-state v-else-if="error" type="error" title="门店信息加载失败" :description="error" action-text="重新加载" @action="load" />
+      <view v-for="store in stores" v-if="!loading && !error" :key="store.storeId" class="store-row">
         <view class="store-top">
           <view><text class="store-name">{{ store.storeName }}</text><text class="open-tag">营业中</text></view>
           <text class="hours">{{ store.businessHours || '营业时间待更新' }}</text>
@@ -22,7 +24,7 @@
         </view>
       </view>
 
-      <view v-if="!stores.length" class="empty-state">
+      <view v-if="!loading && !error && !stores.length" class="empty-state">
         <view><xy-icon name="location" :size="58" color="#0b756e" /></view>
         <text>暂无营业门店</text><text>门店信息更新后会第一时间显示在这里</text>
       </view>
@@ -36,10 +38,10 @@
 import { publicRequest, showRequestError } from '../../utils/api'
 
 export default {
-  data() { return { stores: [] } },
+  data() { return { stores: [], loading: true, error: '' } },
   onLoad() { this.load() },
   methods: {
-    async load() { try { this.stores = await publicRequest({ url: '/app/stores' }) } catch (error) { showRequestError(error) } },
+    async load() { this.loading = true; this.error = ''; try { this.stores = await publicRequest({ url: '/app/stores' }) } catch (error) { this.error = (error && error.message) || '网络连接失败' } finally { this.loading = false } },
     call(phone) { if (phone) uni.makePhoneCall({ phoneNumber: phone }) },
     nav(store) { if (!store.latitude || !store.longitude) return; uni.openLocation({ latitude: Number(store.latitude), longitude: Number(store.longitude), name: store.storeName, address: store.address }) }
   }

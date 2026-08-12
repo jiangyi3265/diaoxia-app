@@ -1,9 +1,11 @@
 <template>
   <view class="page">
     <xy-header title="商品详情" />
-    <view v-if="product" class="content">
+    <view v-if="loading" class="content"><xy-state type="loading" /></view>
+    <xy-state v-else-if="error" type="error" title="商品详情加载失败" :description="error" action-text="重新加载" @action="load(productId)" />
+    <view v-else-if="product" class="content">
       <view class="media">
-        <image v-if="product.coverUrl" :src="product.coverUrl" mode="aspectFill" />
+        <image v-if="product.coverUrl" :src="mediaUrl(product.coverUrl)" mode="aspectFill" />
         <view v-else class="media-empty"><xy-icon name="bag" :size="68" color="#78918c" /></view>
         <text class="category">{{ product.categoryName || '精选好物' }}</text>
       </view>
@@ -56,25 +58,29 @@
 </template>
 
 <script>
-import { appRequest, ensureMemberSession, showRequestError } from '../../utils/api'
+import { appRequest, ensureMemberSession, resolveMediaUrl, showRequestError } from '../../utils/api'
 
 export default {
-  data() { return { product: null, quantity: 1 } },
+  data() { return { product: null, productId: '', quantity: 1, loading: true, error: '' } },
   computed: {
     displayPrice() { return this.product ? Number(this.product.memberPrice || this.product.salePrice).toFixed(2) : '0.00' },
     totalPrice() { return (Number(this.displayPrice) * this.quantity).toFixed(2) },
     hasMemberDiscount() { return this.product && Number(this.product.memberDiscountAmount || 0) > 0 },
     discountExcluded() { return this.product && (this.product.memberDiscountEligible === false || Number(this.product.memberDiscountEnabled) === 0) }
   },
-  onLoad(query) { this.load(query.productId) },
+  onLoad(query) { this.productId = String(query.productId || ''); this.load(this.productId) },
   methods: {
     async load(productId) {
+      this.loading = true
+      this.error = ''
       try {
         await ensureMemberSession()
         const list = await appRequest({ url: '/app/products', data: { productId } })
         this.product = list[0] || null
-      } catch (error) { showRequestError(error) }
+      } catch (error) { this.error = (error && error.message) || '网络连接失败' }
+      finally { this.loading = false }
     },
+    mediaUrl(value) { return resolveMediaUrl(value) },
     buy() { uni.navigateTo({ url: `/pages/mall/confirm?productId=${this.product.productId}&quantity=${this.quantity}` }) }
   }
 }

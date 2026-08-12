@@ -1,9 +1,17 @@
 <template>
   <view class="page">
-    <xy-header title="钓虾生活馆" variant="brand" :show-back="false" />
+    <xy-header title="虾语 · 钓虾生活馆" variant="brand" :show-back="false" />
 
     <view class="content">
-      <view class="hero">
+      <xy-state
+        v-if="error"
+        type="error"
+        title="会员状态加载失败"
+        :description="error"
+        action-text="重新加载"
+        @action="load"
+      />
+      <view v-else class="hero">
         <view class="hero-top">
           <view class="member-state">
             <view class="state-dot" :class="{ active: hasCard }"></view>
@@ -21,8 +29,8 @@
 
         <button class="hero-action" @click="go(primaryUrl)">
           <view class="action-copy">
-            <text class="action-label">{{ hasCard ? '立即预约座位' : '开通会员' }}</text>
-            <text class="action-hint">{{ hasCard ? '选择时段和心仪座位' : '解锁在线选座与会员优惠' }}</text>
+            <text class="action-label">{{ hasCard ? '立即预约座位' : '到店办理会员' }}</text>
+            <text class="action-hint">{{ hasCard ? '选择时段和心仪座位' : '先提交申请，到店付款确认后生效' }}</text>
           </view>
           <view class="action-arrow">
             <xy-icon name="arrow-up-right" :size="38" color="#0B756E" :weight="2" />
@@ -88,6 +96,7 @@ export default {
     return {
       me: {},
       loading: true,
+      error: '',
       services: [
         { label: '商城', description: '钓具与到店好物', icon: 'bag', url: '/pages/mall/mall', tone: 'mint', color: '#0B756E' },
         { label: '我的订单', description: '配送、收货与售后', icon: 'invoice', url: '/pages/order/list', tone: 'sand', color: '#9A672B' }
@@ -100,7 +109,15 @@ export default {
   },
   computed: {
     hasCard() {
-      return !!this.me.card
+      const card = this.me.card
+      if (!card) return false
+      const status = String(card.status || card.cardStatus || '').toUpperCase()
+      if (status && !['ACTIVE', 'VALID', 'ENABLED'].includes(status)) return false
+      if (card.expireDate) {
+        const expiresAt = new Date(`${String(card.expireDate).slice(0, 10)}T23:59:59`)
+        if (!Number.isNaN(expiresAt.getTime()) && expiresAt.getTime() < Date.now()) return false
+      }
+      return true
     },
     primaryUrl() {
       return this.hasCard ? '/pages/reserve/reserve' : '/pages/membership/join'
@@ -112,7 +129,7 @@ export default {
     heroSubtitle() {
       if (this.loading) return '正在加载你的专属服务'
       if (this.hasCard) return `会员有效至 ${this.me.card.expireDate}`
-      return '开通后即可在线选时段、挑座位'
+      return '可先线上提交申请，到店付款后开通'
     }
   },
   onShow() {
@@ -121,11 +138,12 @@ export default {
   methods: {
     async load() {
       this.loading = true
+      this.error = ''
       try {
         await ensureMemberSession()
         this.me = await appRequest({ url: '/app/me' })
       } catch (error) {
-        this.me = {}
+        this.error = (error && error.message) || '暂时无法确认会员状态，请检查网络后重试'
       } finally {
         this.loading = false
       }

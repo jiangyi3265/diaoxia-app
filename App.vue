@@ -30,6 +30,7 @@
 		--xy-lake-deep: #0A4F73;
 
 		--xy-bg: #F1F6F5;
+		--xy-bg-deep: #E9F2F0;
 		--xy-surface: #FFFFFF;
 		--xy-surface-2: #F7FBFA;
 
@@ -51,8 +52,13 @@
 		--xy-shadow: 0 8rpx 30rpx rgba(16, 78, 74, 0.06);
 		--xy-shadow-lg: 0 16rpx 44rpx rgba(12, 84, 80, 0.12);
 		--xy-card-radius: 28rpx;
+		--xy-radius-sm: 18rpx;
+		--xy-radius-md: 24rpx;
+		--xy-page-x: 28rpx;
+		--xy-motion: 180ms cubic-bezier(0.16, 1, 0.3, 1);
 
-		background: var(--xy-bg);
+		background-color: var(--xy-bg);
+		background-image: radial-gradient(circle at 92% 2%, rgba(22, 194, 179, 0.08), transparent 360rpx);
 		color: var(--xy-ink);
 		font-family: -apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
 		font-size: 28rpx;
@@ -78,12 +84,14 @@
 		min-height: 100vh;
 		background: var(--xy-bg);
 	}
+	.xy-content { padding: 24rpx var(--xy-page-x) 48rpx; }
 	.xy-safe-bottom { height: calc(env(safe-area-inset-bottom) + 24rpx); }
 	.xy-tabbar-hold { height: calc(env(safe-area-inset-bottom) + 132rpx); }
 
 	.xy-card {
 		background: var(--xy-surface);
 		border-radius: var(--xy-card-radius);
+		border: 1rpx solid rgba(18, 92, 84, 0.07);
 		box-shadow: var(--xy-shadow);
 	}
 
@@ -137,6 +145,7 @@
 		border-radius: 26rpx;
 		font-size: 30rpx;
 		font-weight: 600;
+		transition: transform var(--xy-motion), opacity var(--xy-motion), background-color var(--xy-motion);
 	}
 	.xy-btn-primary {
 		background: linear-gradient(120deg, var(--xy-primary-bright), var(--xy-primary) 60%, var(--xy-lake));
@@ -174,6 +183,27 @@
 		padding: 28rpx 0;
 	}
 	.xy-divider { height: 2rpx; background: var(--xy-hairline); }
+
+	/* 所有页面共享的商用交互基线 */
+	.xy-tap { transition: transform var(--xy-motion), opacity var(--xy-motion); }
+	.xy-tap:active { transform: scale(0.985); opacity: 0.88; }
+	.xy-skeleton {
+		position: relative;
+		overflow: hidden;
+		background: #DDE9E6;
+	}
+	.xy-skeleton::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		transform: translateX(-100%);
+		background: linear-gradient(90deg, transparent, rgba(255,255,255,.56), transparent);
+		animation: xy-shimmer 1.35s infinite;
+	}
+	@keyframes xy-shimmer { to { transform: translateX(100%); } }
+
+	input, textarea { caret-color: var(--xy-primary); }
+	button[disabled] { opacity: .64; box-shadow: none !important; }
 
 	.xy-price::before {
 		content: "¥";

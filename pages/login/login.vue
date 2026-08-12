@@ -4,7 +4,7 @@
     <view class="brand-row">
       <image class="logo" :src="logoUrl" mode="aspectFill" />
       <view class="brand-copy">
-        <text class="brand-name">钓虾生活馆</text>
+        <text class="brand-name">虾语 · 钓虾生活馆</text>
         <text class="brand-note">预约、会员、商城一站完成</text>
       </view>
     </view>
@@ -32,7 +32,7 @@
         <xy-icon name="user" :size="38" color="#F3FCF9" :weight="2" />
         <text>{{ buttonText }}</text>
       </button>
-      <text class="agreement">登录即表示你同意使用微信身份完成小程序账号登录</text>
+      <view class="agreement"><text>登录即表示你已阅读并同意</text><text @click.stop="openLegal('terms')">《用户服务协议》</text><text>和</text><text @click.stop="openLegal('privacy')">《隐私政策》</text></view>
     </view>
     <view class="safe-bottom"></view>
   </view>
@@ -105,12 +105,13 @@ export default {
       } finally {
         this.loggingIn = false
       }
-    }
+    },
+    openLegal(page) { uni.navigateTo({ url: `/pages/legal/${page}` }) }
   }
 }
 </script>
 
 <style scoped>
-.page{min-height:100vh;padding:0 28rpx;background:#edf5f3;color:#18322e}.status-space{width:100%}.brand-row{display:flex;align-items:center;gap:18rpx;padding:22rpx 4rpx 28rpx}.logo{width:76rpx;height:76rpx;border-radius:24rpx;box-shadow:0 10rpx 28rpx rgba(11,117,110,.15)}.brand-copy{display:flex;flex-direction:column;gap:5rpx}.brand-name{font-size:31rpx;font-weight:750}.brand-note{color:#718681;font-size:22rpx}.scene{position:relative;overflow:hidden;height:490rpx;border-radius:38rpx;background:#164b46;box-shadow:0 22rpx 54rpx rgba(15,72,67,.18)}.scene image{width:100%;height:100%}.scene-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,45,41,.05) 18%,rgba(7,45,41,.83) 100%)}.scene-copy{position:absolute;right:34rpx;bottom:34rpx;left:34rpx;display:flex;flex-direction:column}.eyebrow{width:max-content;margin-bottom:14rpx;padding:8rpx 16rpx;border-radius:18rpx;background:rgba(225,249,242,.16);color:#dff8f1;font-size:21rpx;font-weight:650}.headline{color:#f2fcf8;font-size:43rpx;font-weight:780;letter-spacing:-1rpx}.description{max-width:29em;margin-top:15rpx;color:#c4e4dc;font-size:24rpx;line-height:1.6}.benefits{padding:28rpx 8rpx 18rpx}.benefit{display:flex;align-items:center;gap:20rpx;min-height:94rpx;border-bottom:1rpx solid #dce9e5}.benefit:last-child{border-bottom:0}.benefit-icon{display:flex;align-items:center;justify-content:center;width:64rpx;height:64rpx;border-radius:20rpx;background:#dcefe9}.benefit view:last-child{display:flex;flex-direction:column;gap:6rpx}.benefit-title{font-size:26rpx;font-weight:700}.benefit-note{color:#748984;font-size:21rpx}.login-panel{padding:12rpx 0 18rpx}.login-button{display:flex;align-items:center;justify-content:center;gap:14rpx;width:100%;height:98rpx;border-radius:28rpx;background:#0b756e;color:#f3fcf9;font-size:29rpx;font-weight:700;box-shadow:0 14rpx 34rpx rgba(11,117,110,.24)}.login-button[disabled]{opacity:.62}.agreement{display:block;margin-top:18rpx;color:#8a9c98;font-size:20rpx;text-align:center}.safe-bottom{height:calc(env(safe-area-inset-bottom) + 20rpx)}
+.page{min-height:100vh;padding:0 28rpx;background:#edf5f3;color:#18322e}.status-space{width:100%}.brand-row{display:flex;align-items:center;gap:18rpx;padding:22rpx 4rpx 28rpx}.logo{width:76rpx;height:76rpx;border-radius:24rpx;box-shadow:0 10rpx 28rpx rgba(11,117,110,.15)}.brand-copy{display:flex;flex-direction:column;gap:5rpx}.brand-name{font-size:31rpx;font-weight:750}.brand-note{color:#718681;font-size:22rpx}.scene{position:relative;overflow:hidden;height:490rpx;border-radius:38rpx;background:#164b46;box-shadow:0 22rpx 54rpx rgba(15,72,67,.18)}.scene image{width:100%;height:100%}.scene-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,45,41,.05) 18%,rgba(7,45,41,.83) 100%)}.scene-copy{position:absolute;right:34rpx;bottom:34rpx;left:34rpx;display:flex;flex-direction:column}.eyebrow{width:max-content;margin-bottom:14rpx;padding:8rpx 16rpx;border-radius:18rpx;background:rgba(225,249,242,.16);color:#dff8f1;font-size:21rpx;font-weight:650}.headline{color:#f2fcf8;font-size:43rpx;font-weight:780;letter-spacing:-1rpx}.description{max-width:29em;margin-top:15rpx;color:#c4e4dc;font-size:24rpx;line-height:1.6}.benefits{padding:28rpx 8rpx 18rpx}.benefit{display:flex;align-items:center;gap:20rpx;min-height:94rpx;border-bottom:1rpx solid #dce9e5}.benefit:last-child{border-bottom:0}.benefit-icon{display:flex;align-items:center;justify-content:center;width:64rpx;height:64rpx;border-radius:20rpx;background:#dcefe9}.benefit view:last-child{display:flex;flex-direction:column;gap:6rpx}.benefit-title{font-size:26rpx;font-weight:700}.benefit-note{color:#748984;font-size:21rpx}.login-panel{padding:12rpx 0 18rpx}.login-button{display:flex;align-items:center;justify-content:center;gap:14rpx;width:100%;height:98rpx;border-radius:28rpx;background:#0b756e;color:#f3fcf9;font-size:29rpx;font-weight:700;box-shadow:0 14rpx 34rpx rgba(11,117,110,.24)}.login-button[disabled]{opacity:.62}.agreement{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;margin-top:18rpx;color:#8a9c98;font-size:20rpx;text-align:center}.agreement text:nth-child(2),.agreement text:nth-child(4){color:#0b756e}.safe-bottom{height:calc(env(safe-area-inset-bottom) + 20rpx)}
 .invite-tip{display:flex;align-items:center;justify-content:center;gap:10rpx;min-height:64rpx;margin-bottom:16rpx;border-radius:20rpx;background:#dff1ed;color:#466963;font-size:22rpx}
 </style>

@@ -14,11 +14,12 @@
 
     <view class="content">
       <view v-if="loading" class="loading-list"><view v-for="i in 4" :key="i" /></view>
+      <xy-state v-else-if="error" type="error" title="商品加载失败" :description="error" action-text="重新加载" @action="load" />
       <view v-else-if="filteredProducts.length === 0" class="empty-state"><xy-icon name="bag" :size="58" color="#0b756e" /><text>这个分类暂时没有商品</text></view>
       <view v-else class="grid">
         <view v-for="product in filteredProducts" :key="product.productId" class="product" @click="open(product)">
           <view class="media">
-            <image v-if="product.coverUrl" :src="product.coverUrl" mode="aspectFill" />
+            <image v-if="product.coverUrl" :src="mediaUrl(product.coverUrl)" mode="aspectFill" />
             <view v-else class="placeholder"><xy-icon name="bag" :size="48" color="#7a918c" /></view>
             <text v-if="hasMemberDiscount(product)" class="discount-badge">会员价</text>
           </view>
@@ -35,19 +36,20 @@
 </template>
 
 <script>
-import { appRequest, ensureMemberSession, showRequestError } from '../../utils/api'
+import { appRequest, ensureMemberSession, resolveMediaUrl, showRequestError } from '../../utils/api'
 
 export default {
-  data() { return { products: [], loading: true, selectedCategory: '全部' } },
+  data() { return { products: [], loading: true, error: '', selectedCategory: '全部' } },
   computed: {
     categories() { return ['全部', ...new Set(this.products.map(item => item.categoryName).filter(Boolean))] },
     filteredProducts() { return this.selectedCategory === '全部' ? this.products : this.products.filter(item => item.categoryName === this.selectedCategory) }
   },
   onShow() { this.load() },
   methods: {
-    async load() { this.loading = true; try { await ensureMemberSession(); this.products = await appRequest({ url: '/app/products' }) } catch (error) { showRequestError(error) } finally { this.loading = false } },
+    async load() { this.loading = true; this.error = ''; try { await ensureMemberSession(); this.products = await appRequest({ url: '/app/products' }) } catch (error) { this.error = (error && error.message) || '网络连接失败' } finally { this.loading = false } },
     displayPrice(product) { return Number(product.memberPrice || product.salePrice).toFixed(2) },
     hasMemberDiscount(product) { return Number(product.memberDiscountAmount || 0) > 0 },
+    mediaUrl(value) { return resolveMediaUrl(value) },
     open(product) { uni.navigateTo({ url: `/pages/mall/product?productId=${product.productId}` }) }
   }
 }

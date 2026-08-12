@@ -132,12 +132,24 @@
 			"style": {
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "pages/legal/terms",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/legal/privacy",
+			"style": {
+				"navigationStyle": "custom"
+			}
 		}
 	],
 	"globalStyle": {
 		"navigationStyle": "custom",
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "虾语",
+		"navigationBarTitleText": "虾语 · 钓虾生活馆",
 		"navigationBarBackgroundColor": "#F1F6F5",
 		"backgroundColor": "#F1F6F5"
 	},

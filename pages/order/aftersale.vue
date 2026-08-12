@@ -2,7 +2,7 @@
   <view class="page">
     <xy-header title="申请退款" />
     <view class="wrap">
-      <view class="notice"><xy-icon name="info" :size="30" color="#0a8f84" /><text>提交后由商家审核，审核通过后按原支付渠道退款。演示订单不会产生真实资金变动。</text></view>
+      <view class="notice"><xy-icon name="info" :size="30" color="#0a8f84" /><text>提交后由商家审核。线下付款订单由门店实际办理退款，工作人员确认退款完成后，小程序状态才会更新。</text></view>
       <view class="order-no"><text>退款订单</text><text>{{ orderNo }}</text></view>
       <view class="form-section">
         <text class="label">退款原因</text>

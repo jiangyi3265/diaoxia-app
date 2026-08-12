@@ -8,9 +8,18 @@
         <text class="intro-note">下单时可快速选择，我们会妥善保护你的信息</text>
       </view>
 
-      <view v-if="addresses.length" class="address-list">
+      <xy-state v-if="loading" type="loading" />
+      <xy-state
+        v-else-if="error"
+        type="error"
+        title="地址加载失败"
+        :description="error"
+        action-text="重新加载"
+        @action="load"
+      />
+      <view v-else-if="addresses.length" class="address-list">
         <view v-for="item in addresses" :key="item.addressId" class="address-card">
-          <view class="address-main" @click="edit(item)">
+          <view class="address-main" @click="handleAddress(item)">
             <view class="address-head">
               <text class="receiver">{{ item.receiverName }}</text>
               <text class="mobile">{{ item.receiverMobile }}</text>
@@ -18,7 +27,8 @@
             </view>
             <text class="address-text">{{ item.province }}{{ item.city }}{{ item.district }}{{ item.detail }}</text>
           </view>
-          <view class="edit-button" @click="edit(item)">
+          <view v-if="selectMode" class="select-button" @click="select(item)"><xy-icon name="check" :size="30" color="#0B756E" /></view>
+          <view class="edit-button" @click.stop="edit(item)">
             <xy-icon name="edit" :size="40" color="#677a78" />
           </view>
         </view>
@@ -31,7 +41,7 @@
       </view>
     </view>
 
-    <view class="bottom-bar">
+    <view v-if="!loading && !error" class="bottom-bar">
       <button class="primary-button" @click="edit()">新增收货地址</button>
     </view>
 
@@ -84,23 +94,34 @@ const blank = () => ({
 
 export default {
   data() {
-    return { addresses: [], editing: false, saving: false, form: blank() }
+    return { addresses: [], editing: false, saving: false, loading: true, error: '', selectMode: false, form: blank() }
   },
+  onLoad(query) { this.selectMode = String(query.select || '') === '1' },
   onShow() {
     this.load()
   },
   methods: {
     async load() {
+      this.loading = true
+      this.error = ''
       try {
         await ensureMemberSession()
         this.addresses = await appRequest({ url: '/app/addresses' })
       } catch (error) {
-        showRequestError(error)
+        this.error = (error && error.message) || '暂时无法读取收货地址，请检查网络后重试'
+      } finally {
+        this.loading = false
       }
     },
     edit(item) {
       this.form = item ? { ...item, isDefault: !!item.isDefault } : blank()
       this.editing = true
+    },
+    handleAddress(item) { this.selectMode ? this.select(item) : this.edit(item) },
+    select(item) {
+      uni.setStorageSync('xy.checkout.addressId', item.addressId)
+      uni.showToast({ title: '已选择地址', icon: 'success' })
+      setTimeout(() => uni.navigateBack(), 350)
     },
     closeEditor() {
       if (!this.saving) this.editing = false
@@ -155,4 +176,5 @@ export default {
 
 <style scoped>
 .page{min-height:100vh;background:#f3f8f7;padding-bottom:150rpx}.content{padding:28rpx 28rpx 20rpx}.intro{padding:8rpx 4rpx 30rpx}.intro-title,.intro-note{display:block}.intro-title{font-size:36rpx;font-weight:800;color:#172522}.intro-note{margin-top:10rpx;font-size:24rpx;color:#7a8b88}.address-list{display:flex;flex-direction:column;gap:18rpx}.address-card{display:flex;align-items:center;padding:30rpx;border:1rpx solid rgba(25,95,89,.08);border-radius:26rpx;background:#fff;box-shadow:0 12rpx 30rpx rgba(25,76,71,.05)}.address-main{flex:1;min-width:0}.address-head{display:flex;align-items:center;gap:16rpx}.receiver{font-size:31rpx;font-weight:800;color:#172522}.mobile{font-size:27rpx;color:#667875}.default-tag{padding:5rpx 12rpx;border-radius:8rpx;background:#e6f8f5;color:#0b958a;font-size:20rpx}.address-text{display:block;margin-top:16rpx;color:#5f706d;font-size:25rpx;line-height:1.6}.edit-button{display:flex;align-items:center;justify-content:center;width:70rpx;height:70rpx;margin-left:18rpx;border-radius:50%;background:#f3f7f6}.empty-state{display:flex;flex-direction:column;align-items:center;padding:120rpx 30rpx}.empty-icon{display:flex;align-items:center;justify-content:center;width:100rpx;height:100rpx;border-radius:30rpx;background:#e6f8f5}.empty-title{margin-top:28rpx;font-size:30rpx;font-weight:700;color:#293735}.empty-note{margin-top:12rpx;color:#899793;font-size:24rpx}.bottom-bar{position:fixed;z-index:5;right:0;bottom:0;left:0;padding:20rpx 28rpx calc(20rpx + env(safe-area-inset-bottom));background:rgba(255,255,255,.94);box-shadow:0 -8rpx 30rpx rgba(20,70,66,.08);backdrop-filter:blur(16px)}button::after{border:0}.primary-button,.save-button{height:86rpx;border-radius:24rpx;background:#11a89c;color:#fff;font-size:28rpx;font-weight:700;line-height:86rpx}.mask{position:fixed;z-index:20;inset:0;display:flex;align-items:flex-end;background:rgba(15,31,29,.45)}.sheet{width:100%;max-height:92vh;padding:12rpx 28rpx calc(28rpx + env(safe-area-inset-bottom));border-radius:34rpx 34rpx 0 0;background:#f5f9f8;overflow:auto}.sheet-handle{width:72rpx;height:8rpx;margin:0 auto 20rpx;border-radius:8rpx;background:#d1dddb}.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:4rpx 2rpx 24rpx}.sheet-title{font-size:36rpx;font-weight:800;color:#182724}.close{display:flex;align-items:center;justify-content:center;width:64rpx;height:64rpx;border-radius:50%;background:#e9f0ef}.form-card{padding:0 26rpx;border-radius:26rpx;background:#fff}.field{display:flex;align-items:center;min-height:96rpx;border-bottom:1rpx solid #edf2f1}.field:last-child{border-bottom:0}.field-label{width:150rpx;color:#273633;font-size:26rpx}.field input,.field textarea{flex:1;color:#172522;font-size:26rpx}.detail-field{align-items:flex-start;padding:26rpx 0}.detail-field textarea{height:100rpx;line-height:1.5}.default-row{display:flex;align-items:center;justify-content:space-between;margin-top:20rpx;padding:26rpx;border-radius:24rpx;background:#fff}.default-title,.default-note{display:block}.default-title{font-size:27rpx;font-weight:700;color:#273633}.default-note{margin-top:7rpx;color:#899793;font-size:22rpx}.sheet-actions{display:flex;gap:18rpx;margin-top:24rpx}.sheet-actions button{flex:1;margin:0}.delete-button{height:86rpx;border-radius:24rpx;background:#fff;color:#d45b55;font-size:28rpx;line-height:86rpx}
+.select-button{display:flex;align-items:center;justify-content:center;width:70rpx;height:70rpx;margin-left:14rpx;border-radius:22rpx;background:#e2f2ee}
 </style>

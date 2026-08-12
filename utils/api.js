@@ -11,6 +11,12 @@ function baseUrl() {
 	return apiBaseUrl
 }
 
+export function resolveMediaUrl(value) {
+	const source = String(value || '').trim()
+	if (!source || /^(https?:|data:|blob:|wxfile:)/i.test(source)) return source
+	return baseUrl() + (source.startsWith('/') ? source : `/${source}`)
+}
+
 export function request(options) {
 	return new Promise((resolve, reject) => {
 		let url
@@ -19,6 +25,7 @@ export function request(options) {
 			url,
 			method: options.method || 'GET',
 			data: options.data,
+			timeout: Number(options.timeout) || 15000,
 			header: Object.assign({ 'content-type': 'application/json' }, options.header || {}),
 			success: (response) => {
 				const body = response.data || {}
@@ -30,7 +37,10 @@ export function request(options) {
 				error.code = body.code || response.statusCode
 				reject(error)
 			},
-			fail: () => reject(new Error('网络连接失败，请检查网络后重试'))
+			fail: (failure) => {
+				const detail = String((failure && failure.errMsg) || '')
+				reject(new Error(detail.includes('timeout') ? '请求超时，请稍后重试' : '网络连接失败，请检查网络后重试'))
+			}
 		})
 	})
 }

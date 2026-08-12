@@ -38,6 +38,12 @@ jobs:
       - name: Verify production API domain
         run: |
           grep -R -F "https://diaox.daioxia.cn" unpackage/dist/build/mp-weixin >/dev/null
+          if grep -R -E 'https?://(localhost|127\.0\.0\.1)|wss?://(localhost|127\.0\.0\.1)' \
+            unpackage/dist/build/mp-weixin --include='*.js' --include='*.json' --include='*.wxml'; then
+            echo 'Local development endpoint found in production mini-program output.' >&2
+            exit 1
+          fi
+          test "$(node -p "require('./unpackage/dist/build/mp-weixin/project.config.json').setting.urlCheck")" = "true"
 
       - name: Save build artifact
         uses: actions/upload-artifact@v7

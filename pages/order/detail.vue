@@ -1,20 +1,22 @@
 <template>
   <view class="page">
     <xy-header title="订单详情" />
-    <view v-if="order" class="content">
+    <view v-if="loading" class="content"><xy-state type="loading" /></view>
+    <xy-state v-else-if="error" type="error" title="订单详情加载失败" :description="error" action-text="重新加载" @action="load" />
+    <view v-else-if="order" class="content">
       <view class="status-panel" :class="statusTone">
         <view class="status-icon"><xy-icon :name="statusIcon" :size="46" color="#f3fbf8" /></view>
         <view><text>{{ displayStatus }}</text><text>{{ statusNote }}</text></view>
       </view>
 
-      <view v-if="demoEnabled && order.status === 'PENDING_PAYMENT'" class="demo-tip">
+      <view v-if="order.status === 'PENDING_PAYMENT'" class="payment-tip">
         <xy-icon name="info" :size="28" color="#0a8f84" />
-        <text>演示支付已开启，不会产生真实扣款</text>
+        <view><text>{{ paymentMode === 'OFFLINE' ? '到店付款，等待门店确认' : paymentMode === 'DEMO' ? '当前为演示支付' : '微信安全支付' }}</text><text>{{ paymentMode === 'OFFLINE' ? offlinePaymentNote : paymentMode === 'DEMO' ? '仅用于测试，不会产生真实扣款' : '付款成功后商家将开始处理订单' }}</text></view>
       </view>
 
       <view class="goods-section">
         <view v-for="item in order.items" :key="item.productId" class="goods-row">
-          <image v-if="item.coverUrl" :src="item.coverUrl" mode="aspectFill" />
+          <image v-if="item.coverUrl" :src="mediaUrl(item.coverUrl)" mode="aspectFill" />
           <view><text>{{ item.productName }}</text><text>¥{{ item.salePrice }} × {{ item.quantity }}</text></view>
           <text>¥{{ item.subtotalAmount }}</text>
         </view>
@@ -44,7 +46,7 @@
 
     <view v-if="order && availableActions" class="action-bar">
       <button v-if="order.status === 'PENDING_PAYMENT'" class="secondary" @click="cancelOrder">取消订单</button>
-      <button v-if="order.status === 'PENDING_PAYMENT'" class="primary" :loading="paying" @click="pay">{{ demoEnabled ? '演示支付' : '微信支付' }} ¥{{ order.payableAmount }}</button>
+      <button v-if="order.status === 'PENDING_PAYMENT'" class="primary" :disabled="paymentSubmitted" :loading="paying" @click="pay">{{ payButtonText }}</button>
       <button v-if="order.status === 'SHIPPED'" class="primary" @click="receipt">确认收货</button>
       <button v-if="canRefund" class="secondary" @click="refund">申请退款</button>
     </view>
@@ -52,45 +54,88 @@
 </template>
 
 <script>
-import { appRequest, ensureMemberSession, publicRequest, showRequestError } from '../../utils/api'
+import { appRequest, ensureMemberSession, publicRequest, resolveMediaUrl, showRequestError } from '../../utils/api'
 
 export default {
   data() {
     return {
-      order: null, orderNo: '', demoEnabled: false, paying: false,
-      labels: { PENDING_PAYMENT: '等待支付', PAID: '等待发货', SHIPPED: '商品已发出', COMPLETED: '订单已完成', CANCELED: '订单已取消', AFTER_SALE: '退款处理中', REFUNDED: '订单已退款' },
+      order: null, orderNo: '', paymentMode: 'OFFLINE', paying: false, paymentSubmitted: false, loading: true, error: '',
+      labels: { PENDING_PAYMENT: '等待付款', PAID: '等待发货', SHIPPED: '商品已发出', COMPLETED: '订单已完成', CANCELED: '订单已取消', AFTER_SALE: '退款处理中', REFUNDED: '订单已退款' },
       refundLabels: { PENDING:'退款申请审核中', REFUNDING:'退款处理中', APPROVED:'退款完成', REJECTED:'退款申请未通过', REFUND_FAILED:'退款失败' }
     }
   },
   computed: {
-    displayStatus() { return this.refundLabels[this.order.afterSaleStatus] || this.labels[this.order.status] || this.order.status },
+    displayStatus() { if (!this.order.afterSaleStatus && this.paymentSubmitted) return '等待门店确认'; return this.refundLabels[this.order.afterSaleStatus] || this.labels[this.order.status] || this.order.status },
     statusTone() { return ['CANCELED','REFUNDED'].includes(this.order.status) || this.order.afterSaleStatus === 'REJECTED' ? 'muted' : this.order.status === 'PENDING_PAYMENT' ? 'waiting' : 'success' },
     statusIcon() { return this.order.status === 'PENDING_PAYMENT' ? 'wallet' : ['CANCELED','REFUNDED'].includes(this.order.status) ? 'close' : 'check' },
     statusNote() {
-      const refundNotes = { PENDING:'商家会尽快审核你的退款申请', REFUNDING:'退款正在按原支付渠道处理', APPROVED:'退款已经处理完成', REJECTED:'可联系客服了解原因或重新申请', REFUND_FAILED:'请联系客服协助重新处理' }
+      const refundNotes = { PENDING:'商家会尽快审核你的退款申请', REFUNDING:'门店正在办理实际退款，完成后会更新状态', APPROVED:'门店已确认退款处理完成', REJECTED:'可联系客服了解原因或重新申请', REFUND_FAILED:'请联系客服协助重新处理' }
       if (this.order.afterSaleStatus && refundNotes[this.order.afterSaleStatus]) return refundNotes[this.order.afterSaleStatus]
-      const notes = { PENDING_PAYMENT: '完成支付后，商家将开始处理订单', PAID: '商家正在准备商品，请耐心等待', SHIPPED: '请留意配送信息或到店领取', COMPLETED: '感谢你的购买，期待再次光临', CANCELED: '订单已关闭，库存已经恢复', AFTER_SALE: '商家正在处理你的售后申请', REFUNDED: '款项已按原流程退回' }
+      const notes = { PENDING_PAYMENT: this.paymentSubmitted ? '付款申请已提交，请到门店付款并等待确认' : this.paymentMode === 'OFFLINE' ? '请提交付款申请，到店完成付款后由门店确认' : '完成支付后，商家将开始处理订单', PAID: '商家正在准备商品，请耐心等待', SHIPPED: '请留意配送信息或到店领取', COMPLETED: '感谢你的购买，期待再次光临', CANCELED: '订单已关闭，库存已经恢复', AFTER_SALE: '商家正在处理你的售后申请', REFUNDED: '退款流程已经完成' }
       return notes[this.order.status] || '订单状态已更新'
     },
     refundNote() { return this.statusNote },
+    offlinePaymentNote() {
+      const time = this.order && this.order.paymentExpireTime
+      return time
+        ? `申请不会自动扣款，请在 ${String(time).replace('T', ' ').slice(0, 16)} 前到店付款；门店确认后开始处理订单`
+        : '申请不会自动扣款，请在 24 小时内到店付款；门店确认后开始处理订单'
+    },
     canRefund() { return ['PAID','SHIPPED','COMPLETED'].includes(this.order.status) && !['PENDING','REFUNDING','APPROVED','REFUND_FAILED'].includes(this.order.afterSaleStatus) },
-    availableActions() { return ['PENDING_PAYMENT','SHIPPED'].includes(this.order.status) || this.canRefund }
+    availableActions() { return ['PENDING_PAYMENT','SHIPPED'].includes(this.order.status) || this.canRefund },
+    payButtonText() {
+      if (this.paymentSubmitted) return '已提交，等待门店确认'
+      if (this.paying) return '正在提交'
+      if (this.paymentMode === 'OFFLINE') return `提交到店付款申请 · ¥${this.order.payableAmount}`
+      return `${this.paymentMode === 'DEMO' ? '演示支付' : '微信支付'} · ¥${this.order.payableAmount}`
+    }
   },
-  onLoad(query) { this.orderNo = query.orderNo; this.initialize() },
+  onLoad(query) { this.orderNo = query.orderNo },
+  onShow() { if (this.orderNo) this.load() },
   methods: {
-    async initialize() { await Promise.all([this.load(), this.loadPaymentMode()]) },
-    async loadPaymentMode() { try { const settings = await publicRequest({ url: '/app/payment-settings' }); this.demoEnabled = !!settings.demoEnabled } catch (error) {} },
-    async load() { try { await ensureMemberSession(); this.order = await appRequest({ url: `/app/orders/${this.orderNo}` }) } catch (error) { showRequestError(error) } },
+    async loadPaymentMode() {
+      try {
+        const settings = await publicRequest({ url: '/app/payment-settings' })
+        this.paymentMode = String(settings.mode || (settings.demoEnabled ? 'DEMO' : settings.wechatPayEnabled ? 'WECHAT' : 'OFFLINE')).toUpperCase()
+      } catch (error) { this.paymentMode = 'OFFLINE' }
+    },
+    async load() {
+      this.loading = true
+      this.error = ''
+      try {
+        await ensureMemberSession()
+        const [order] = await Promise.all([
+          appRequest({ url: `/app/orders/${this.orderNo}` }),
+          this.loadPaymentMode()
+        ])
+        this.order = order
+        this.paymentSubmitted = this.order.status === 'PENDING_PAYMENT' &&
+          String(this.order.paymentChannel || this.order.channel || '').toUpperCase() === 'OFFLINE' &&
+          String(this.order.paymentStatus || '').toUpperCase() === 'PENDING'
+      } catch (error) {
+        this.order = null
+        this.paymentSubmitted = false
+        this.error = (error && error.message) || '网络连接失败'
+      } finally { this.loading = false }
+    },
+    mediaUrl(value) { return resolveMediaUrl(value) },
     async pay() {
-      if (this.paying) return
+      if (this.paying || this.paymentSubmitted || !this.order || this.order.status !== 'PENDING_PAYMENT') return
       this.paying = true
       try {
         const payment = await appRequest({ url: `/app/orders/${this.orderNo}/payment`, method: 'POST' })
-        if (payment.demoPayment) {
+        if (payment.offlinePayment || payment.pendingConfirmation) {
+          this.paymentSubmitted = true
+          const deadline = payment.expireTime ? `请在 ${String(payment.expireTime).replace('T', ' ').slice(0, 16)} 前` : '请在 24 小时内'
+          uni.showModal({ title: '付款申请已提交', content: `${deadline}到门店完成付款。逾期申请会自动关闭并释放库存；工作人员确认收款后，订单会进入处理流程。`, showCancel: false, confirmText: '知道了', confirmColor: '#0B756E' })
+          return
+        }
+        if (payment.demoPayment && this.paymentMode === 'DEMO') {
           uni.showToast({ title: '演示支付成功', icon: 'success' })
           await this.load()
           return
         }
+        if (this.paymentMode !== 'WECHAT') throw new Error('当前暂不支持微信支付，请到店付款')
         uni.requestPayment({ ...payment, success: () => this.load(), fail: () => uni.showToast({ title: '支付未完成', icon: 'none' }) })
       } catch (error) { showRequestError(error) } finally { this.paying = false }
     },
@@ -102,5 +147,5 @@ export default {
 </script>
 
 <style scoped>
-.page{min-height:100vh;background:#eef5f3}.content{padding:18rpx 26rpx}.status-panel{display:flex;align-items:center;gap:20rpx;padding:34rpx 30rpx;border-radius:30rpx;background:#0c8f85;color:#f4fbf9}.status-panel.waiting{background:#bd7648}.status-panel.muted{background:#6d7e7a}.status-icon{display:flex;align-items:center;justify-content:center;width:82rpx;height:82rpx;border-radius:26rpx;background:rgba(244,251,249,.14)}.status-panel>view:last-child{display:flex;flex:1;flex-direction:column;gap:8rpx}.status-panel text:first-child{font-size:32rpx;font-weight:850}.status-panel text:last-child{font-size:21rpx;opacity:.8}.demo-tip{display:flex;align-items:center;gap:12rpx;margin-top:18rpx;padding:19rpx 22rpx;border-radius:20rpx;background:#dcf1ed;color:#51716b;font-size:22rpx}.goods-section,.info-section,.amount-section{margin-top:20rpx;padding:10rpx 24rpx;border-radius:28rpx;background:#f9fcfb}.goods-row{display:flex;align-items:center;gap:18rpx;padding:18rpx 0}.goods-row image{width:112rpx;height:112rpx;border-radius:19rpx;background:#dce8e5}.goods-row>view{display:flex;flex:1;min-width:0;flex-direction:column;gap:10rpx}.goods-row>view text:first-child{font-size:27rpx;font-weight:750}.goods-row>view text:last-child{color:#81908d;font-size:22rpx}.goods-row>text{color:#263633;font-size:26rpx;font-weight:750}.info-section,.amount-section{padding:14rpx 26rpx}.info-section>view,.amount-section>view{display:flex;justify-content:space-between;gap:30rpx;padding:16rpx 0;color:#687a76;font-size:23rpx}.info-section>view>text:last-child,.amount-section>view>text:last-child{color:#273633;text-align:right}.info-section .multiline{max-width:430rpx;line-height:1.55}.copyable{font-size:21rpx}.amount-section .discount>text:last-child{color:#d9613d}.amount-section .total{margin-top:7rpx;padding-top:23rpx;border-top:1rpx solid #e0e9e7;color:#253532;font-weight:750}.amount-section .total>text:last-child{color:#df594c;font-size:32rpx;font-weight:900}.refund-section{margin-top:20rpx;padding:24rpx 26rpx;border-radius:25rpx;background:#e2f2ee;color:#57736d}.refund-section>view{display:flex;align-items:center;gap:12rpx;color:#1d4a42;font-size:25rpx;font-weight:750}.refund-section>text{display:block;margin-top:10rpx;font-size:21rpx;line-height:1.5}.bottom-space{height:145rpx}.empty-state{display:flex;flex-direction:column;align-items:center;gap:22rpx;padding:160rpx 30rpx;color:#778985}.action-bar{position:fixed;z-index:10;right:0;bottom:0;left:0;display:flex;justify-content:flex-end;gap:16rpx;padding:18rpx 26rpx calc(18rpx + env(safe-area-inset-bottom));background:#f8fbfa;box-shadow:0 -10rpx 30rpx rgba(23,73,68,.08)}.action-bar button{height:84rpx;margin:0;padding:0 30rpx;border-radius:23rpx;font-size:25rpx;font-weight:750;line-height:84rpx}.primary{min-width:300rpx;background:#0b8d84;color:#f4fbf9}.secondary{border:1rpx solid #d5e1de;background:#f8fbfa;color:#596d68}
+.page{min-height:100vh;background:#eef5f3}.content{padding:18rpx 26rpx}.status-panel{display:flex;align-items:center;gap:20rpx;padding:34rpx 30rpx;border-radius:30rpx;background:#0c8f85;color:#f4fbf9}.status-panel.waiting{background:#bd7648}.status-panel.muted{background:#6d7e7a}.status-icon{display:flex;align-items:center;justify-content:center;width:82rpx;height:82rpx;border-radius:26rpx;background:rgba(244,251,249,.14)}.status-panel>view:last-child{display:flex;flex:1;flex-direction:column;gap:8rpx}.status-panel text:first-child{font-size:32rpx;font-weight:850}.status-panel text:last-child{font-size:21rpx;opacity:.8}.payment-tip{display:flex;align-items:flex-start;gap:13rpx;margin-top:18rpx;padding:20rpx 22rpx;border:1rpx solid #cfe7e2;border-radius:22rpx;background:#e5f3f0}.payment-tip>view{display:flex;flex:1;flex-direction:column;gap:5rpx}.payment-tip text:first-child{color:#245047;font-size:23rpx;font-weight:750}.payment-tip text:last-child{color:#5b7670;font-size:21rpx;line-height:1.5}.goods-section,.info-section,.amount-section{margin-top:20rpx;padding:10rpx 24rpx;border-radius:28rpx;background:#f9fcfb}.goods-row{display:flex;align-items:center;gap:18rpx;padding:18rpx 0}.goods-row image{width:112rpx;height:112rpx;border-radius:19rpx;background:#dce8e5}.goods-row>view{display:flex;flex:1;min-width:0;flex-direction:column;gap:10rpx}.goods-row>view text:first-child{font-size:27rpx;font-weight:750}.goods-row>view text:last-child{color:#81908d;font-size:22rpx}.goods-row>text{color:#263633;font-size:26rpx;font-weight:750}.info-section,.amount-section{padding:14rpx 26rpx}.info-section>view,.amount-section>view{display:flex;justify-content:space-between;gap:30rpx;padding:16rpx 0;color:#687a76;font-size:23rpx}.info-section>view>text:last-child,.amount-section>view>text:last-child{color:#273633;text-align:right}.info-section .multiline{max-width:430rpx;line-height:1.55}.copyable{font-size:21rpx}.amount-section .discount>text:last-child{color:#d9613d}.amount-section .total{margin-top:7rpx;padding-top:23rpx;border-top:1rpx solid #e0e9e7;color:#253532;font-weight:750}.amount-section .total>text:last-child{color:#df594c;font-size:32rpx;font-weight:900}.refund-section{margin-top:20rpx;padding:24rpx 26rpx;border-radius:25rpx;background:#e2f2ee;color:#57736d}.refund-section>view{display:flex;align-items:center;gap:12rpx;color:#1d4a42;font-size:25rpx;font-weight:750}.refund-section>text{display:block;margin-top:10rpx;font-size:21rpx;line-height:1.5}.bottom-space{height:145rpx}.empty-state{display:flex;flex-direction:column;align-items:center;gap:22rpx;padding:160rpx 30rpx;color:#778985}.action-bar{position:fixed;z-index:10;right:0;bottom:0;left:0;display:flex;justify-content:flex-end;gap:16rpx;padding:18rpx 26rpx calc(18rpx + env(safe-area-inset-bottom));background:#f8fbfa;box-shadow:0 -10rpx 30rpx rgba(23,73,68,.08)}.action-bar button{height:84rpx;margin:0;padding:0 30rpx;border-radius:23rpx;font-size:25rpx;font-weight:750;line-height:84rpx}.primary{min-width:300rpx;background:#0b8d84;color:#f4fbf9}.secondary{border:1rpx solid #d5e1de;background:#f8fbfa;color:#596d68}
 </style>
