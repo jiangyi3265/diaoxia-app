@@ -1,6 +1,6 @@
 {
     "name" : "钓虾",
-    "appid" : "wx56d182594c05ce23",
+    "appid" : "wx62712d7f9c391049",
     "description" : "",
     "versionName" : "1.0.0",
     "versionCode" : "100",
@@ -50,7 +50,7 @@
     "quickapp" : {},
     /* 小程序特有相关 */
     "mp-weixin" : {
-        "appid" : "wx56d182594c05ce23",
+        "appid" : "wx62712d7f9c391049",
         "setting" : {
             "urlCheck" : true
         },
