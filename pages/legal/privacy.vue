@@ -1,6 +1,6 @@
 <template>
   <view class="page"><xy-header title="隐私政策" /><view class="document">
-    <text class="title">钓虾生活馆隐私政策</text><text class="updated">更新日期：2026 年 8 月 12 日</text>
+    <text class="title">成泰钓虾俱乐部隐私政策</text><text class="updated">更新日期：2026 年 8 月 21 日</text>
     <view class="notice"><xy-icon name="shield" :size="34" color="#0B756E" /><text>我们仅在提供预约、会员、订单和客服服务所必需的范围内处理信息。</text></view>
     <view v-for="section in sections" :key="section.title" class="section"><text>{{ section.title }}</text><text v-for="paragraph in section.paragraphs" :key="paragraph">{{ paragraph }}</text></view>
     <view class="footer-note">如需查询、更正或删除相关信息，可通过小程序“联系客服”提交请求。</view>
@@ -8,7 +8,7 @@
 </template>
 <script>
 export default { data(){return{sections:[
-  {title:'一、我们收集的信息',paragraphs:['登录时，我们通过微信登录凭证创建小程序账号，不在小程序中读取你的微信密码。你主动填写或业务产生的信息可能包括昵称、手机号、会员信息、预约与签到记录、收货地址、订单、售后申请和客服沟通所需信息。','使用门店导航时，地图能力会根据你的主动操作处理门店位置；我们不会在后台持续获取你的实时位置。']},
+  {title:'一、我们收集的信息',paragraphs:['登录时，我们通过微信登录凭证创建小程序账号，不在小程序中读取你的微信密码。你主动填写或业务产生的信息可能包括昵称、手机号、会员信息、预约与签到记录、收货地址、订单、支付与退款记录、售后申请和客服沟通所需信息。使用微信支付时，支付由微信支付完成，我们仅接收订单号、支付结果和交易单号等必要信息，不会获取你的银行卡号或支付密码。','使用门店导航时，地图能力会根据你的主动操作处理门店位置；我们不会在后台持续获取你的实时位置。']},
   {title:'二、信息使用目的',paragraphs:['上述信息用于完成账号识别、预约选座、到店核验、会员服务、订单履约、配送联系、售后处理、安全保障和客户服务，不用于与这些目的无关的用途。']},
   {title:'三、信息共享',paragraphs:['为实现微信登录、小程序运行、地图导航和必要的基础设施服务，相关平台可能按其规则处理必要数据。除法律法规要求或完成你主动申请的服务外，我们不会出售你的个人信息。']},
   {title:'四、存储与保护',paragraphs:['我们会采取合理的访问控制和安全措施保护信息，并在实现服务目的所需期间保存。法律法规另有保存期限要求的，按相关要求处理。']},

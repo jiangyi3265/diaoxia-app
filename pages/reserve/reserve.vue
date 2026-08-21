@@ -7,8 +7,8 @@
     <view v-else-if="membershipRequired" class="member-required">
       <view class="member-icon"><xy-icon name="card" :size="62" color="#0B756E" /></view>
       <text class="member-title">预约服务面向有效会员</text>
-      <text class="member-note">先提交会员申请，到店付款并由工作人员确认后，即可在线选择时段和座位。</text>
-      <button @click="openMembership">申请到店办理</button>
+      <text class="member-note">先提交会员申请，付款后即可在线选择时段和座位。</text>
+      <button @click="openMembership">申请办理会员</button>
       <text @click="history">查看我的预约记录</text>
     </view>
 

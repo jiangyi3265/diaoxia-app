@@ -21,7 +21,7 @@
       </view>
       <view class="member-summary" @click="go('/pages/membership/card')">
         <view><text class="summary-label">会员权益</text><text class="summary-value">{{ cardSummary }}</text></view>
-        <view class="summary-action"><text>{{ me.card ? '查看会员卡' : '到店办理' }}</text><xy-icon name="chevron-right" :size="30" color="#0B756E" :weight="1.8" /></view>
+        <view class="summary-action"><text>{{ me.card ? '查看会员卡' : '办理会员' }}</text><xy-icon name="chevron-right" :size="30" color="#0B756E" :weight="1.8" /></view>
       </view>
     </view>
 
@@ -67,7 +67,7 @@ export default {
   },
   computed: {
     avatarText() { return (this.me.nickname || '微').slice(0, 1) },
-    cardSummary() { return this.me.card ? `${this.me.card.planName}，${this.me.card.expireDate} 到期` : '提交申请，到店付款确认后开通权益' }
+    cardSummary() { return this.me.card ? `${this.me.card.planName}，${this.me.card.expireDate} 到期` : '提交申请，付款确认后开通权益' }
   },
   onShow() { this.load() },
   methods: {

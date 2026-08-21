@@ -18,7 +18,7 @@
       </view>
 
       <view v-if="product" class="goods-row">
-        <image v-if="product.coverUrl" :src="mediaUrl(product.coverUrl)" mode="aspectFill" />
+        <image v-if="product.coverUrl" :src="mediaUrl(product.coverUrl)" mode="aspectFill" @error="product.coverUrl = ''" />
         <view class="goods-copy"><text>{{ product.productName }}</text><text>{{ product.categoryName }} · 数量 {{ quantity }}</text></view>
         <text class="goods-price">¥{{ total }}</text>
       </view>

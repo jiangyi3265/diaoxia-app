@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <xy-header title="虾语 · 钓虾生活馆" variant="brand" :show-back="false" />
+    <xy-header title="成泰钓虾俱乐部" variant="brand" :show-back="false" />
 
     <view class="content">
       <xy-state
@@ -29,8 +29,8 @@
 
         <button class="hero-action" @click="go(primaryUrl)">
           <view class="action-copy">
-            <text class="action-label">{{ hasCard ? '立即预约座位' : '到店办理会员' }}</text>
-            <text class="action-hint">{{ hasCard ? '选择时段和心仪座位' : '先提交申请，到店付款确认后生效' }}</text>
+            <text class="action-label">{{ hasCard ? '立即预约座位' : '办理会员' }}</text>
+            <text class="action-hint">{{ hasCard ? '选择时段和心仪座位' : '先提交申请，付款确认后生效' }}</text>
           </view>
           <view class="action-arrow">
             <xy-icon name="arrow-up-right" :size="38" color="#0B756E" :weight="2" />
@@ -129,7 +129,7 @@ export default {
     heroSubtitle() {
       if (this.loading) return '正在加载你的专属服务'
       if (this.hasCard) return `会员有效至 ${this.me.card.expireDate}`
-      return '可先线上提交申请，到店付款后开通'
+      return '线上提交申请，付款后开通'
     }
   },
   onShow() {

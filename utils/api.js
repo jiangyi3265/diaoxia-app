@@ -14,6 +14,8 @@ function baseUrl() {
 export function resolveMediaUrl(value) {
 	const source = String(value || '').trim()
 	if (!source || /^(https?:|data:|blob:|wxfile:)/i.test(source)) return source
+	// `/static/...` 是小程序包内资源路径，拼上接口域名会 404；历史商品主图仍可能是该格式。
+	if (source.startsWith('/static/')) return source
 	return baseUrl() + (source.startsWith('/') ? source : `/${source}`)
 }
 
@@ -124,3 +126,4 @@ export function ensureMemberSession() {
 export function showRequestError(error) {
 	uni.showToast({ title: (error && error.message) || '服务暂不可用', icon: 'none' })
 }
+

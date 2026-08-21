@@ -16,7 +16,7 @@
 
       <view class="goods-section">
         <view v-for="item in order.items" :key="item.productId" class="goods-row">
-          <image v-if="item.coverUrl" :src="mediaUrl(item.coverUrl)" mode="aspectFill" />
+          <image v-if="item.coverUrl" :src="mediaUrl(item.coverUrl)" mode="aspectFill" @error="item.coverUrl = ''" />
           <view><text>{{ item.productName }}</text><text>¥{{ item.salePrice }} × {{ item.quantity }}</text></view>
           <text>¥{{ item.subtotalAmount }}</text>
         </view>

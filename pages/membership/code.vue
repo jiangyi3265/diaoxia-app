@@ -9,7 +9,7 @@
       </view>
 
       <view class="code-card">
-        <view class="brand"><view class="brand-dot" /><text>虾语 · 钓虾生活馆会员</text></view>
+        <view class="brand"><view class="brand-dot" /><text>成泰钓虾俱乐部会员</text></view>
         <view class="qr-stage">
           <canvas v-show="code" id="memberQr" canvas-id="memberQr" class="qr-canvas" />
           <view v-if="!code" class="qr-placeholder">

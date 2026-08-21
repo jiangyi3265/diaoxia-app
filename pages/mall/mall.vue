@@ -19,7 +19,7 @@
       <view v-else class="grid">
         <view v-for="product in filteredProducts" :key="product.productId" class="product" @click="open(product)">
           <view class="media">
-            <image v-if="product.coverUrl" :src="mediaUrl(product.coverUrl)" mode="aspectFill" />
+            <image v-if="product.coverUrl" :src="mediaUrl(product.coverUrl)" mode="aspectFill" @error="product.coverUrl = ''" />
             <view v-else class="placeholder"><xy-icon name="bag" :size="48" color="#7a918c" /></view>
             <text v-if="hasMemberDiscount(product)" class="discount-badge">会员价</text>
           </view>

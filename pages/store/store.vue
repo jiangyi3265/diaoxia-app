@@ -4,7 +4,7 @@
     <view class="hero">
       <image src="/static/img/store2.jpg" mode="aspectFill" />
       <view class="hero-shade" />
-      <view class="hero-copy"><text>虾语 · 钓虾生活馆</text><text>舒适钓位、轻松聚会，等你到店</text></view>
+      <view class="hero-copy"><text>成泰钓虾俱乐部</text><text>舒适钓位、轻松聚会，等你到店</text></view>
     </view>
 
     <view class="content">
@@ -29,7 +29,6 @@
         <text>暂无营业门店</text><text>门店信息更新后会第一时间显示在这里</text>
       </view>
 
-      <view class="notice"><xy-icon name="info" :size="28" color="#0a8f84" /><text>节假日营业时间可能调整，出发前建议先联系门店。</text></view>
     </view>
   </view>
 </template>

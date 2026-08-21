@@ -4,12 +4,12 @@
     <view class="hero">
       <text class="hero-kicker">XY MEMBER</text>
       <text class="hero-title">成为会员，钓得更尽兴</text>
-      <text class="hero-note">预约优先 · 商城折扣 · 到店专属权益</text>
+      <text class="hero-note">预约钓虾 · 商城折扣 · 到店专属权益</text>
     </view>
 
     <view class="content">
       <view class="section-head">
-        <text class="section-title">包月会员</text>
+        <text class="section-title">钓虾包月会员</text>
         <text class="section-note">连续 30 天有效</text>
       </view>
 
@@ -40,7 +40,7 @@
       <view class="rights-card">
         <text class="rights-title">会员权益</text>
         <view class="rights-grid">
-          <view class="right-item"><view class="right-icon"><xy-icon name="calendar-check" :size="38" color="#0a968b" /></view><text>优先预约</text></view>
+          <view class="right-item"><view class="right-icon"><xy-icon name="calendar-check" :size="38" color="#0a968b" /></view><text>预约钓虾</text></view>
           <view class="right-item"><view class="right-icon"><xy-icon name="cart" :size="38" color="#0a968b" /></view><text>商城折扣</text></view>
           <view class="right-item"><view class="right-icon"><xy-icon name="qrcode" :size="38" color="#0a968b" /></view><text>专属动态码</text></view>
         </view>

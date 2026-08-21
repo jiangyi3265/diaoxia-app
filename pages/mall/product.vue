@@ -5,7 +5,7 @@
     <xy-state v-else-if="error" type="error" title="商品详情加载失败" :description="error" action-text="重新加载" @action="load(productId)" />
     <view v-else-if="product" class="content">
       <view class="media">
-        <image v-if="product.coverUrl" :src="mediaUrl(product.coverUrl)" mode="aspectFill" />
+        <image v-if="product.coverUrl" :src="mediaUrl(product.coverUrl)" mode="aspectFill" @error="product.coverUrl = ''" />
         <view v-else class="media-empty"><xy-icon name="bag" :size="68" color="#78918c" /></view>
         <text class="category">{{ product.categoryName || '精选好物' }}</text>
       </view>

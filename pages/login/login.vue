@@ -4,7 +4,7 @@
     <view class="brand-row">
       <image class="logo" :src="logoUrl" mode="aspectFill" />
       <view class="brand-copy">
-        <text class="brand-name">虾语 · 钓虾生活馆</text>
+        <text class="brand-name">成泰钓虾俱乐部</text>
         <text class="brand-note">预约、会员、商城一站完成</text>
       </view>
     </view>

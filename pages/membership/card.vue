@@ -5,15 +5,15 @@
       <xy-state v-if="loading" type="loading" />
       <xy-state v-else-if="error" type="error" title="会员卡加载失败" :description="error" action-text="重新加载" @action="load" />
       <view v-else-if="card" class="member-card">
-        <view class="card-top"><view class="brand"><xy-icon name="crown" :size="38" color="#F5DCA7" :weight="1.8" /><text>虾语 · 钓虾生活馆</text></view><text class="state">有效会员</text></view>
+        <view class="card-top"><view class="brand"><xy-icon name="crown" :size="38" color="#F5DCA7" :weight="1.8" /><text>成泰钓虾俱乐部</text></view><text class="state">有效会员</text></view>
         <text class="plan">{{ card.planName }}</text>
         <text class="number">{{ card.cardNo }}</text>
         <view class="card-bottom"><view><text>有效期至</text><text>{{ card.expireDate }}</text></view><view><text>累计预约</text><text>{{ card.usageCount || 0 }} 次</text></view></view>
       </view>
       <view v-else class="empty-card">
         <view class="empty-icon"><xy-icon name="card" :size="62" color="#0B756E" :weight="1.6" /></view>
-        <text class="empty-title">还没有会员卡</text><text class="empty-note">可先提交开卡申请，到店付款并由工作人员确认后生效。</text>
-        <button class="primary" @click="join">申请到店办理</button>
+        <text class="empty-title">还没有会员卡</text><text class="empty-note">可先提交开卡申请，付款确认后生效。</text>
+        <button class="primary" @click="join">申请办理会员</button>
       </view>
 
       <view v-if="!loading && !error && card" class="actions">

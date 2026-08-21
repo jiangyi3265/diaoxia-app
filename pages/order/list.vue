@@ -8,7 +8,7 @@
       <view v-for="order in displayOrders" v-if="!loading && !error" :key="order.orderNo" class="order" @click="detail(order)">
         <view class="order-head"><text class="order-no">{{ order.orderNo }}</text><text class="status">{{ statusLabel(order) }}</text></view>
         <view class="goods">
-          <image v-if="order.coverUrl" :src="mediaUrl(order.coverUrl)" mode="aspectFill" />
+          <image v-if="order.coverUrl" :src="mediaUrl(order.coverUrl)" mode="aspectFill" @error="order.coverUrl = ''" />
           <view v-else class="cover-placeholder"><xy-icon name="bag" :size="42" color="#0B756E" :weight="1.6" /></view>
           <view class="goods-copy"><text>{{ order.productName || '商城订单' }}</text><text>共 {{ order.quantity || 0 }} 件</text></view>
         </view>
