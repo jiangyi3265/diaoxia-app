@@ -55,7 +55,7 @@ export default {
       error: '',
       menus: [
         { label:'会员资料', note:'昵称、手机号与邀请码', url:'/pages/membership/profile', icon:'user', tone:'mint', color:'#0B756E' },
-        { label:'我的预约', note:'查看场次、座位与签到码', url:'/pages/reserve/history', icon:'calendar-check', tone:'blue', color:'#32778C' },
+        { label:'我的预约', note:'查看场次、座位与门店信息', url:'/pages/reserve/history', icon:'calendar-check', tone:'blue', color:'#32778C' },
         { label:'我的订单', note:'支付、配送与售后进度', url:'/pages/order/list', icon:'invoice', tone:'sand', color:'#94662E' },
         { label:'退款/售后', note:'申请退款与查看处理进度', url:'/pages/order/list?view=refund', icon:'refresh', tone:'rose', color:'#A85B55' },
         { label:'消费账单', note:'会员与商城支付记录', url:'/pages/bills/bills', icon:'wallet', tone:'rose', color:'#A85B55' },

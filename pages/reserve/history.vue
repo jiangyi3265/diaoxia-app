@@ -1,7 +1,7 @@
 <template><view class="page"><xy-header title="我的预约" /><view class="wrap">
   <xy-state v-if="loading" type="loading" />
   <xy-state v-else-if="error" type="error" title="预约记录加载失败" :description="error" action-text="重新加载" @action="load" />
-  <view v-if="!loading && !error && records.length" class="summary"><text>共 {{ records.length }} 条预约记录</text><text>点击查看签到码与门店信息</text></view>
+  <view v-if="!loading && !error && records.length" class="summary"><text>共 {{ records.length }} 条预约记录</text><text>点击查看场次与门店信息</text></view>
   <view v-for="item in records" v-if="!loading && !error" :key="item.reservationNo" class="record" @click="detail(item)">
     <view class="record-top"><view class="date"><text>{{ shortDate(item.reservationDate) }}</text><text>{{ item.startTime }}–{{ item.endTime }}</text></view><text class="status" :class="statusClass(item.status)">{{ labels[item.status] || item.status }}</text></view>
     <view class="place"><view class="place-icon"><xy-icon name="seat" :size="36" color="#0B756E" :weight="1.8" /></view><view><text>{{ item.storeName }}</text><text>{{ item.zoneName }} {{ item.seatCode }}</text></view><xy-icon name="chevron-right" :size="30" color="#91A39F" :weight="1.7" /></view>

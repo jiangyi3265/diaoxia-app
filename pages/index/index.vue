@@ -49,7 +49,7 @@
         </view>
         <view class="reservation-copy">
           <text class="entry-title">我的预约</text>
-          <text class="entry-subtitle">查看场次、座位与签到码</text>
+          <text class="entry-subtitle">查看场次、座位与门店信息</text>
         </view>
         <xy-icon name="chevron-right" :size="34" color="#7D918C" :weight="1.8" />
       </view>
