@@ -17,7 +17,7 @@
           <button @click.stop="refund(order)">申请退款</button>
         </view>
       </view>
-      <view v-if="!loading && !error && !displayOrders.length" class="empty"><view><xy-icon :name="view === 'refund' ? 'refresh' : 'invoice'" :size="60" color="#0B756E" :weight="1.5" /></view><text class="empty-title">{{ view === 'refund' ? '暂无售后记录' : '还没有订单' }}</text><text class="empty-note">{{ view === 'refund' ? '提交退款申请后，可在这里查看处理进度。' : '商城里的钓具和到店好物，都会记录在这里。' }}</text><button v-if="view !== 'refund'" @click="mall">逛逛商城</button></view>
+      <view v-if="!loading && !error && !displayOrders.length" class="empty"><view><xy-icon :name="view === 'refund' ? 'refresh' : 'invoice'" :size="60" color="#0B756E" :weight="1.5" /></view><text class="empty-title">{{ view === 'refund' ? '暂无售后记录' : '暂无历史订单' }}</text><text class="empty-note">{{ view === 'refund' ? '提交退款申请后，可在这里查看处理进度。' : '已产生的历史订单会显示在这里。' }}</text></view>
     </view>
   </view>
 </template>
@@ -49,8 +49,7 @@ export default {
     deliveryLabel(type) { return type === 'DELIVERY' ? '配送到家' : '到店自提' },
     mediaUrl(value) { return resolveMediaUrl(value) },
     detail(order) { uni.navigateTo({ url:`/pages/order/detail?orderNo=${order.orderNo}` }) },
-    refund(order) { uni.navigateTo({ url:`/pages/order/aftersale?orderNo=${order.orderNo}` }) },
-    mall() { uni.reLaunch({ url:'/pages/mall/mall' }) }
+    refund(order) { uni.navigateTo({ url:`/pages/order/aftersale?orderNo=${order.orderNo}` }) }
   }
 }
 </script>

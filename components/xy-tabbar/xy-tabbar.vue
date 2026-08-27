@@ -31,6 +31,8 @@
 </template>
 
 <script>
+import { hasMemberSession, hasPrivacyConsent, publicRequest } from '../../utils/api'
+
 export default {
 	name: 'xy-tabbar',
 	props: {
@@ -38,18 +40,40 @@ export default {
 	},
 	data() {
 		return {
-			items: [
+			hasProducts: false
+		}
+	},
+	computed: {
+		items() {
+			return [
 				{ key: 'index', label: '首页', icon: 'home', path: '/pages/index/index' },
 				{ key: 'reserve', label: '预约', icon: 'calendar', path: '/pages/reserve/reserve' },
 				{ key: 'code', center: true, path: '/pages/membership/code' },
-				{ key: 'mall', label: '商城', icon: 'bag', path: '/pages/mall/mall' },
+				this.hasProducts
+					? { key: 'mall', label: '好物', icon: 'bag', path: '/pages/mall/mall' }
+					: { key: 'store', label: '门店', icon: 'location', path: '/pages/store/store' },
 				{ key: 'mine', label: '我的', icon: 'user', path: '/pages/mine/mine' }
 			]
 		}
 	},
+	created() {
+		this.loadCommerceState()
+	},
 	methods: {
+		async loadCommerceState() {
+			try {
+				const products = await publicRequest({ url: '/app/products' })
+				this.hasProducts = Array.isArray(products) && products.length > 0
+			} catch (error) {
+				this.hasProducts = false
+			}
+		},
 		go(it) {
 			if (it.key === this.active) return
+			if ((it.center || it.key === 'mine') && (!hasMemberSession() || !hasPrivacyConsent())) {
+				uni.navigateTo({ url: `/pages/login/login?redirect=${it.center ? 'code' : 'mine'}` })
+				return
+			}
 			if (it.center) {
 				uni.navigateTo({ url: it.path })
 				return

@@ -6,7 +6,7 @@
       <xy-state
         v-if="error"
         type="error"
-        title="会员状态加载失败"
+        title="首页信息加载失败"
         :description="error"
         action-text="重新加载"
         @action="load"
@@ -14,8 +14,8 @@
       <view v-else class="hero">
         <view class="hero-top">
           <view class="member-state">
-            <view class="state-dot" :class="{ active: hasCard }"></view>
-            <text>{{ loading ? '正在确认会员状态' : memberState }}</text>
+            <view class="state-dot" :class="{ active: authenticated && hasCard }"></view>
+            <text>{{ loading ? '正在加载服务信息' : heroState }}</text>
           </view>
           <view class="fish-mark">
             <xy-icon name="fish" :size="50" color="#DDF8F1" :weight="1.6" />
@@ -23,14 +23,14 @@
         </view>
 
         <view class="hero-copy">
-          <text class="hero-title">{{ hasCard ? '今天，想坐哪一席？' : '轻松预约，尽兴开钓' }}</text>
+          <text class="hero-title">{{ heroTitle }}</text>
           <text class="hero-subtitle">{{ heroSubtitle }}</text>
         </view>
 
         <button class="hero-action" @click="go(primaryUrl)">
           <view class="action-copy">
-            <text class="action-label">{{ hasCard ? '立即预约座位' : '办理会员' }}</text>
-            <text class="action-hint">{{ hasCard ? '选择时段和心仪座位' : '先提交申请，付款确认后生效' }}</text>
+            <text class="action-label">{{ primaryActionLabel }}</text>
+            <text class="action-hint">{{ primaryActionHint }}</text>
           </view>
           <view class="action-arrow">
             <xy-icon name="arrow-up-right" :size="38" color="#0B756E" :weight="2" />
@@ -38,12 +38,17 @@
         </button>
       </view>
 
+      <view v-if="!authenticated" class="guest-entry">
+        <view><text>游客浏览</text><text>无需登录即可查看门店、实时空位和会员方案</text></view>
+        <button @click="openLogin('index')">登录</button>
+      </view>
+
       <view class="section-head">
         <text class="section-title">常用服务</text>
         <text class="section-note">快速直达</text>
       </view>
 
-      <view class="reservation-entry" @click="go('/pages/reserve/history')">
+      <view class="reservation-entry" @click="go('/pages/reserve/history', true)">
         <view class="reservation-icon">
           <xy-icon name="calendar-check" :size="48" color="#0B756E" :weight="1.8" />
         </view>
@@ -55,7 +60,7 @@
       </view>
 
       <view class="service-grid">
-        <view v-for="item in services" :key="item.url" class="service-item" @click="go(item.url)">
+        <view v-for="item in services" :key="item.url" class="service-item" @click="go(item.url, item.requiresAuth)">
           <view class="service-icon" :class="item.tone">
             <xy-icon :name="item.icon" :size="42" :color="item.color" :weight="1.8" />
           </view>
@@ -69,7 +74,7 @@
       </view>
 
       <view class="more-list">
-        <view v-for="(item, index) in moreEntries" :key="item.url" class="more-row" @click="go(item.url)">
+        <view v-for="(item, index) in moreEntries" :key="item.url" class="more-row" @click="go(item.url, item.requiresAuth)">
           <view class="more-icon">
             <xy-icon :name="item.icon" :size="38" color="#3D5752" :weight="1.7" />
           </view>
@@ -89,26 +94,30 @@
 </template>
 
 <script>
-import { appRequest, ensureMemberSession } from '../../utils/api'
+import { appRequest, clearMemberSession, hasMemberSession, hasPrivacyConsent, publicRequest } from '../../utils/api'
 
 export default {
   data() {
     return {
       me: {},
+      authenticated: false,
+      currentStore: null,
+      monthlyPlan: null,
       loading: true,
       error: '',
       services: [
-        { label: '商城', description: '钓具与到店好物', icon: 'bag', url: '/pages/mall/mall', tone: 'mint', color: '#0B756E' },
-        { label: '我的订单', description: '配送、收货与售后', icon: 'invoice', url: '/pages/order/list', tone: 'sand', color: '#9A672B' }
+        { label: '会员方案', description: '查看权益、价格和办理方式', icon: 'card', url: '/pages/membership/join', tone: 'mint', color: '#0B756E', requiresAuth: false },
+        { label: '门店服务', description: '营业时间、地址和导航', icon: 'location', url: '/pages/store/store', tone: 'sand', color: '#32778C', requiresAuth: false }
       ],
       moreEntries: [
-        { label: '会员卡', description: '查看权益与有效期', icon: 'card', url: '/pages/membership/card' },
-        { label: '门店信息', description: '地址、营业时间与导航', icon: 'location', url: '/pages/store/store' }
+        { label: '联系客服', description: '预约、会员与到店问题', icon: 'headset', url: '/pages/service/contact', requiresAuth: false },
+        { label: '用户服务协议', description: '了解平台服务规则', icon: 'invoice', url: '/pages/legal/terms', requiresAuth: false }
       ]
     }
   },
   computed: {
     hasCard() {
+      if (!this.authenticated) return false
       const card = this.me.card
       if (!card) return false
       const status = String(card.status || card.cardStatus || '').toUpperCase()
@@ -120,16 +129,31 @@ export default {
       return true
     },
     primaryUrl() {
-      return this.hasCard ? '/pages/reserve/reserve' : '/pages/membership/join'
+      return !this.authenticated || this.hasCard ? '/pages/reserve/reserve' : '/pages/membership/join'
     },
-    memberState() {
+    heroState() {
+      if (!this.authenticated) return '当前可直接浏览'
       if (!this.hasCard) return '尚未开通会员'
       return this.me.card.planName || '有效会员'
     },
+    heroTitle() {
+      if (!this.authenticated) return '先看看场次，再决定'
+      return this.hasCard ? '今天，想坐哪一席？' : '轻松预约，尽兴开钓'
+    },
     heroSubtitle() {
-      if (this.loading) return '正在加载你的专属服务'
+      if (this.loading) return '正在加载门店与预约信息'
+      if (!this.authenticated) return this.currentStore ? `${this.currentStore.storeName} · ${this.currentStore.businessHours || '营业时间待更新'}` : '可浏览门店、实时空位与会员方案'
       if (this.hasCard) return `会员有效至 ${this.me.card.expireDate}`
-      return '线上提交申请，付款后开通'
+      return this.monthlyPlan ? `月享会员 ¥${Number(this.monthlyPlan.amount).toFixed(2)}` : '线上提交申请，付款后开通'
+    },
+    primaryActionLabel() {
+      if (!this.authenticated || this.hasCard) return '浏览实时空位'
+      return '了解会员方案'
+    },
+    primaryActionHint() {
+      if (!this.authenticated) return '无需登录，查看时段与剩余座位'
+      if (this.hasCard) return '选择时段和心仪座位'
+      return '查看权益，确认办理时再登录'
     }
   },
   onShow() {
@@ -140,16 +164,44 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        await ensureMemberSession()
-        this.me = await appRequest({ url: '/app/me' })
+        const [stores, plans] = await Promise.all([
+          publicRequest({ url: '/app/stores' }),
+          publicRequest({ url: '/app/membership-plans' }).catch(() => [])
+        ])
+        this.currentStore = stores[0] || null
+        this.monthlyPlan = plans.find(plan => Number(plan.durationDays) === 30) || plans[0] || null
+        if (hasMemberSession() && hasPrivacyConsent()) {
+          try {
+            this.me = await appRequest({ url: '/app/me', redirectOnUnauthorized: false })
+            this.authenticated = true
+          } catch (error) {
+            clearMemberSession()
+            this.me = {}
+            this.authenticated = false
+          }
+        } else {
+          this.me = {}
+          this.authenticated = false
+        }
       } catch (error) {
-        this.error = (error && error.message) || '暂时无法确认会员状态，请检查网络后重试'
+        this.error = (error && error.message) || '暂时无法加载门店信息，请检查网络后重试'
       } finally {
         this.loading = false
       }
     },
-    go(url) {
-      if (url === '/pages/reserve/reserve' || url === '/pages/mall/mall') {
+    openLogin(redirect = 'index') {
+      uni.navigateTo({ url: `/pages/login/login?redirect=${redirect}` })
+    },
+    go(url, requiresAuth = false) {
+      if (requiresAuth && !this.authenticated) {
+        const redirectMap = {
+          '/pages/reserve/history': 'history',
+          '/pages/membership/card': 'card'
+        }
+        this.openLogin(redirectMap[url] || 'index')
+        return
+      }
+      if (url === '/pages/reserve/reserve' || url === '/pages/store/store') {
         uni.reLaunch({ url })
       } else {
         uni.navigateTo({ url })
@@ -272,11 +324,55 @@ export default {
 }
 
 .hero-action:active,
+.guest-entry button:active,
 .reservation-entry:active,
 .service-item:active,
 .more-row:active {
   transform: scale(0.985);
   opacity: 0.9;
+}
+
+.guest-entry {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  min-height: 102rpx;
+  margin: 18rpx 4rpx 0;
+  padding: 16rpx 18rpx 16rpx 22rpx;
+  border: 1rpx solid #D7E7E2;
+  border-radius: 24rpx;
+  background: #F7FBFA;
+}
+
+.guest-entry > view {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.guest-entry > view text:first-child {
+  color: #21413A;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.guest-entry > view text:last-child {
+  color: #748984;
+  font-size: 20rpx;
+  line-height: 1.45;
+}
+
+.guest-entry button {
+  flex: 0 0 112rpx;
+  height: 64rpx;
+  border-radius: 19rpx;
+  background: #DCEFE9;
+  color: #0B756E;
+  font-size: 23rpx;
+  font-weight: 700;
+  line-height: 64rpx;
 }
 
 .action-copy {

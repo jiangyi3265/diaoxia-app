@@ -24,7 +24,7 @@
       <view v-if="!loading && !error" class="rights">
         <text class="section-title">会员权益</text>
         <view class="right-row"><view class="right-icon"><xy-icon name="calendar-check" :size="34" color="#0B756E" :weight="1.8" /></view><view><text>在线预约钓位</text><text>提前查看空闲场次与座位</text></view></view>
-        <view class="right-row"><view class="right-icon sand"><xy-icon name="tag" :size="34" color="#94662E" :weight="1.8" /></view><view><text>商城会员优惠</text><text>参与优惠的商品自动显示会员价</text></view></view>
+        <view class="right-row"><view class="right-icon sand"><xy-icon name="calendar-check" :size="34" color="#94662E" :weight="1.8" /></view><view><text>在线预约权益</text><text>随时查看场次余位并选择心仪座位</text></view></view>
       </view>
     </view>
   </view>

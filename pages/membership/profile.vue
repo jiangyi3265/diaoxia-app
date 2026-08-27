@@ -3,12 +3,12 @@
     <view class="wrap">
       <view class="identity-card">
         <view class="avatar">{{ (form.nickname || '微').slice(0,1) }}</view>
-        <view><text class="identity-name">{{ form.nickname || '微信会员' }}</text><text class="identity-note">会员资料仅用于预约与订单联系</text></view>
+        <view><text class="identity-name">{{ form.nickname || '微信会员' }}</text><text class="identity-note">会员资料仅用于预约与会员服务联系</text></view>
       </view>
       <view class="info-strip"><view><text>邀请码</text><text>{{ profile.inviteCode || '--' }}</text></view><view><text>会员卡</text><text>{{ profile.card && profile.card.cardNo || '未开通' }}</text></view></view>
       <view class="form-card">
         <view class="field"><text class="label">昵称</text><input v-model="form.nickname" maxlength="20" placeholder="请输入昵称" /><text v-if="nicknameError" class="field-error">{{ nicknameError }}</text></view>
-        <view class="field"><text class="label">手机号</text><input v-model="form.mobile" type="number" maxlength="11" placeholder="用于预约和订单联系" /><text v-if="mobileError" class="field-error">{{ mobileError }}</text></view>
+        <view class="field"><text class="label">手机号</text><input v-model="form.mobile" type="number" maxlength="11" placeholder="用于预约和会员服务联系" /><text v-if="mobileError" class="field-error">{{ mobileError }}</text></view>
       </view>
       <button class="submit" :disabled="saving || !form.nickname" @click="save">{{ saving ? '正在保存' : '保存资料' }}</button>
     </view>

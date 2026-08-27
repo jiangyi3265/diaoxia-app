@@ -2,6 +2,8 @@
 // 自动包含这些变量。默认值保证在微信开发者工具等非标准构建环境中也能访问生产 API。
 const apiBaseUrl = (import.meta.env.VITE_APP_API_BASE_URL || 'https://diaox.daioxia.cn').replace(/\/$/, '')
 const pendingInviteKey = 'xy.pending.invite'
+const privacyConsentStorageKey = 'xy.privacy.consent.version'
+const privacyConsentVersion = '2026-08-21-v1'
 let redirectingToLogin = false
 
 function baseUrl() {
@@ -55,7 +57,7 @@ export function appRequest(options) {
 		.catch((error) => {
 			if (Number(error && error.code) === 401) {
 				clearMemberSession()
-				redirectToLogin()
+				if (options.redirectOnUnauthorized !== false) redirectToLogin()
 			}
 			throw error
 		})
@@ -84,6 +86,14 @@ export function clearMemberSession() {
 	uni.removeStorageSync('xy.member.profile')
 }
 
+export function hasPrivacyConsent() {
+	return uni.getStorageSync(privacyConsentStorageKey) === privacyConsentVersion
+}
+
+export function savePrivacyConsent() {
+	uni.setStorageSync(privacyConsentStorageKey, privacyConsentVersion)
+}
+
 function requestMemberSession(inviteCode) {
 	return new Promise((resolve, reject) => {
 		uni.login({
@@ -105,7 +115,10 @@ function requestMemberSession(inviteCode) {
 	})
 }
 
-export function createMemberSession() {
+export function createMemberSession(options = {}) {
+	if (!options.privacyConsentGranted) {
+		return Promise.reject(new Error('请先阅读并勾选同意相关协议'))
+	}
 	clearMemberSession()
 	const inviteCode = String(uni.getStorageSync(pendingInviteKey) || '').trim()
 	return requestMemberSession(inviteCode).catch((error) => {
@@ -119,8 +132,10 @@ export function createMemberSession() {
 
 export function ensureMemberSession() {
 	const token = uni.getStorageSync('xy.member.token')
-	if (token) return Promise.resolve(token)
-	return createMemberSession().then((data) => data.memberToken)
+	if (token && hasPrivacyConsent()) return Promise.resolve(token)
+	clearMemberSession()
+	redirectToLogin()
+	return Promise.reject(new Error('请先阅读并同意相关协议后登录'))
 }
 
 export function showRequestError(error) {

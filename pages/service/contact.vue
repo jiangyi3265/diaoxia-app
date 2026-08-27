@@ -4,13 +4,13 @@
     <view class="intro">
       <view class="intro-icon"><xy-icon name="headset" :size="54" color="#0b756e" /></view>
       <text class="intro-title">需要帮助？我们在这里</text>
-      <text class="intro-note">预约、会员、商城与退款问题都可以联系我们。</text>
+      <text class="intro-note">预约、会员与到店服务问题都可以联系我们。</text>
     </view>
 
     <view class="actions primary-actions">
       <button class="wechat" open-type="contact">
         <xy-icon name="chat" :size="38" color="#f4fbf9" />
-        <view><text>微信客服</text><text>在线咨询，发送订单或预约信息</text></view>
+        <view><text>微信客服</text><text>在线咨询预约、会员与到店服务</text></view>
         <xy-icon name="chevron-right" :size="30" color="#c9ebe6" />
       </button>
     </view>
@@ -55,7 +55,7 @@
       </view>
       <xy-state v-else type="empty" title="暂无可联系门店" description="门店联系方式正在完善，请先使用微信客服。" />
     </block>
-    <view class="tip"><xy-icon name="info" :size="28" color="#0a8f84" /><text>退款申请请从“我的订单”进入对应订单提交，客服会协助查看处理进度。</text></view>
+    <view class="tip"><xy-icon name="info" :size="28" color="#0a8f84" /><text>会员付款或预约需要协助时，请直接联系微信客服或门店，工作人员会核对记录后处理。</text></view>
     <view class="legal"><text @click="openLegal('terms')">用户服务协议</text><text>·</text><text @click="openLegal('privacy')">隐私政策</text></view>
   </view>
 </template>

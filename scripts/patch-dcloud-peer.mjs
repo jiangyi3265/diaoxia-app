@@ -1,8 +1,23 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const compatibleViteRange = '^5.2.8 || ^6.0.0'
-const packagePath = path.resolve('node_modules/@dcloudio/vite-plugin-uni/package.json')
+const peerPatches = [
+  {
+    packagePath: 'node_modules/@dcloudio/vite-plugin-uni/package.json',
+    lockPath: 'node_modules/@dcloudio/vite-plugin-uni',
+    viteRange: '^5.2.8 || ^6.0.0'
+  },
+  {
+    packagePath: 'node_modules/@dcloudio/vite-plugin-uni/node_modules/@vitejs/plugin-legacy/package.json',
+    lockPath: 'node_modules/@dcloudio/vite-plugin-uni/node_modules/@vitejs/plugin-legacy',
+    viteRange: '^5.0.0 || ^6.0.0'
+  },
+  {
+    packagePath: 'node_modules/@dcloudio/vite-plugin-uni/node_modules/@vitejs/plugin-vue-jsx/package.json',
+    lockPath: 'node_modules/@dcloudio/vite-plugin-uni/node_modules/@vitejs/plugin-vue-jsx',
+    viteRange: '^4.0.0 || ^5.0.0 || ^6.0.0'
+  }
+]
 const hiddenLockPath = path.resolve('node_modules/.package-lock.json')
 
 function updateJson(file, mutate) {
@@ -12,11 +27,15 @@ function updateJson(file, mutate) {
   fs.writeFileSync(file, JSON.stringify(json, null, 2) + '\n')
 }
 
-updateJson(packagePath, json => {
-  json.peerDependencies = { ...json.peerDependencies, vite: compatibleViteRange }
-})
+for (const patch of peerPatches) {
+  updateJson(path.resolve(patch.packagePath), json => {
+    json.peerDependencies = { ...json.peerDependencies, vite: patch.viteRange }
+  })
+}
 
 updateJson(hiddenLockPath, json => {
-  const entry = json.packages && json.packages['node_modules/@dcloudio/vite-plugin-uni']
-  if (entry) entry.peerDependencies = { ...entry.peerDependencies, vite: compatibleViteRange }
+  for (const patch of peerPatches) {
+    const entry = json.packages && json.packages[patch.lockPath]
+    if (entry) entry.peerDependencies = { ...entry.peerDependencies, vite: patch.viteRange }
+  }
 })
