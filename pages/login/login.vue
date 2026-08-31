@@ -86,6 +86,7 @@ export default {
       history: '/pages/reserve/history',
       card: '/pages/membership/card',
       code: '/pages/membership/code',
+      benefit: '/pages/benefit/benefit',
       mine: '/pages/mine/mine'
     }
     this.redirectPath = redirectMap[String((query && query.redirect) || '')] || '/pages/index/index'

@@ -56,6 +56,7 @@ export default {
       menus: [
         { label:'会员资料', note:'昵称、手机号与邀请码', url:'/pages/membership/profile', icon:'user', tone:'mint', color:'#0B756E' },
         { label:'我的预约', note:'查看场次、座位与门店信息', url:'/pages/reserve/history', icon:'calendar-check', tone:'blue', color:'#32778C' },
+        { label:'我的福利钓', note:'查看专场日期、座位与报名状态', url:'/pages/benefit/history', icon:'medal', tone:'sand', color:'#8A5A27' },
         { label:'消费账单', note:'会员开卡与历史付款记录', url:'/pages/bills/bills', icon:'wallet', tone:'rose', color:'#A85B55' },
         { label:'邀请好友', note:'分享你的专属邀请码', url:'/pages/invite/invite', icon:'share', tone:'blue', color:'#32778C' },
         { label:'联系客服', note:'微信客服与门店电话', url:'/pages/service/contact', icon:'headset', tone:'rose', color:'#A85B55' }

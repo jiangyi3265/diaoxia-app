@@ -38,6 +38,18 @@
 			}
 		},
 		{
+			"path": "pages/benefit/benefit",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/benefit/history",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/mall/mall",
 			"style": {
 				"navigationStyle": "custom"

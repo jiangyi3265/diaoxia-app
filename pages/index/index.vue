@@ -59,6 +59,12 @@
         <xy-icon name="chevron-right" :size="34" color="#7D918C" :weight="1.8" />
       </view>
 
+      <view class="benefit-entry" @click="go('/pages/benefit/benefit')">
+        <view class="benefit-entry-icon"><xy-icon name="medal" :size="48" color="#A26322" :weight="1.8" /></view>
+        <view class="reservation-copy"><text class="entry-title">福利钓专场</text><text class="entry-subtitle">20:15开场 · 22座池型选位 · ¥100/位</text></view>
+        <view class="benefit-entry-action"><text>查看场次</text><xy-icon name="chevron-right" :size="30" color="#8A5A27" :weight="1.8" /></view>
+      </view>
+
       <view class="service-grid">
         <view v-for="item in services" :key="item.url" class="service-item" @click="go(item.url, item.requiresAuth)">
           <view class="service-icon" :class="item.tone">
@@ -429,6 +435,22 @@ export default {
   background: #F8FCFA;
   transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease-out;
 }
+
+.benefit-entry {
+  display: flex;
+  align-items: center;
+  min-height: 124rpx;
+  margin-top: 18rpx;
+  padding: 22rpx 24rpx;
+  border: 1rpx solid #E8D7BC;
+  border-radius: 28rpx;
+  background: #FBF6EC;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease-out;
+}
+
+.benefit-entry:active { transform: scale(0.985); opacity: 0.9; }
+.benefit-entry-icon { display:flex;align-items:center;justify-content:center;width:82rpx;height:82rpx;margin-right:20rpx;border-radius:25rpx;background:#F1E4CC; }
+.benefit-entry-action { display:flex;align-items:center;gap:3rpx;color:#8A5A27;font-size:20rpx;font-weight:700; }
 
 .reservation-icon {
   display: flex;
