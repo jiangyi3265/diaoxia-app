@@ -50,7 +50,15 @@
             <view class="short-seats"><button v-for="n in bottomSeats" :key="n" :class="seatClass(n)" :aria-label="seatLabel(n)" :disabled="seatUnavailable(n)" @click="selectSeat(n)">{{ selectedSeat === n ? `✓ ${n}` : n }}</button></view>
           </view>
 
-          <view v-if="active.myBookingStatus" class="my-current"><xy-icon name="info" :size="31" color="#0B756E" /><text>你在本场的状态：{{ active.myBookingStatus }}<template v-if="active.mySeatNo">，座位{{ active.mySeatNo}}号</template></text></view>
+          <view v-if="active.myBookingStatus" class="my-current">
+            <xy-icon name="info" :size="31" color="#0B756E" />
+            <view>
+              <text>你在本场的状态：{{ active.myBookingStatus }}<template v-if="active.mySeatNo">，座位{{ active.mySeatNo}}号</template></text>
+              <text v-if="canContinuePayment">座位还为你保留 {{ countdownText(paymentRemainingSeconds) }}，可在下方继续支付。</text>
+              <text v-else-if="isPaymentPending && paymentRemainingSeconds <= 0">锁座已到期，请刷新后重新选座。</text>
+              <text v-else-if="isPaymentPending">支付状态正在确认，请稍后刷新。</text>
+            </view>
+          </view>
 
           <view v-if="authenticated && !me.mobileVerified" class="mobile-gate">
             <view><text>验证报名手机号</text><text>请使用微信验证手机号。后台录入的号码也需要本人完成一次验证。</text></view>
@@ -62,7 +70,7 @@
     </scroll-view>
 
     <view v-if="active && announcementConfirmed" class="action-bar">
-      <view><text>{{ selectedSeat ? `${selectedSeat}号座位` : '请选择座位' }}</text><text>{{ selectedSeat ? `应付 ¥${money(active.feeAmount)}` : active.displayStatus }}</text></view>
+      <view><text>{{ selectedSeat ? `${selectedSeat}号座位` : '请选择座位' }}</text><text>{{ actionHint }}</text></view>
       <button :disabled="!canSubmit || paying" :loading="paying" @click="pay">{{ submitText }}</button>
     </view>
 
@@ -85,6 +93,8 @@ export default {
       events: [], active: null, activeId: null, selectedSeat: null,
       loading: true, error: '', announcementOpen: false, announcementConfirmed: false,
       authenticated: false, me: {}, paying: false, pendingPayment: null,
+      paymentRemainingSeconds: 0, paymentTimer: null, bookingPollTimer: null,
+      pageVisible: true, requestedEventId: null,
       startTemplateId: '', cancelTemplateId: '',
       topSeats: [19,20], bottomSeats: [21,22],
       leftSeats: [1,2,3,4,5,6,7,8,9], rightSeats: [10,11,12,13,14,15,16,17,18]
@@ -93,8 +103,19 @@ export default {
   computed: {
     seatMap() { const map = {}; for (const seat of (this.active?.seats || [])) map[Number(seat.seatNo)] = seat.status; return map },
     hasActiveBooking() { return ['已报名','报名确认中'].includes(this.active?.myBookingStatus) },
-    canSubmit() { return !!(this.active?.signupOpen && this.announcementConfirmed && this.selectedSeat && !this.hasActiveBooking && (!this.authenticated || this.me.mobileVerified)) },
+    isPaymentPending() { return this.active?.myBookingStatus === '报名确认中' },
+    canContinuePayment() { return !!(this.isPaymentPending && this.active?.myCanContinuePayment && this.paymentRemainingSeconds > 0) },
+    canSubmit() {
+      if (this.isPaymentPending) return !!(this.authenticated && this.active?.myBookingNo
+        && (this.canContinuePayment || this.paymentRemainingSeconds <= 0) && !this.paying)
+      return !!(this.active?.signupOpen && this.announcementConfirmed && this.selectedSeat && !this.hasActiveBooking && (!this.authenticated || this.me.mobileVerified))
+    },
+    actionHint() {
+      if (this.isPaymentPending) return this.canContinuePayment ? `锁座剩余 ${this.countdownText(this.paymentRemainingSeconds)}` : this.paymentRemainingSeconds <= 0 ? '锁座已到期' : '支付状态确认中'
+      return this.selectedSeat ? `应付 ¥${this.money(this.active?.feeAmount)}` : this.active?.displayStatus
+    },
     submitText() {
+      if (this.isPaymentPending) return this.canContinuePayment ? '继续支付' : this.paymentRemainingSeconds <= 0 ? '刷新状态' : '状态确认中'
       if (this.hasActiveBooking) return this.active.myBookingStatus
       if (!this.active?.signupOpen) return this.active?.displayStatus || '当前不可报名'
       if (!this.authenticated) return '登录后报名'
@@ -103,8 +124,14 @@ export default {
       return this.pendingPayment ? '继续微信支付' : `微信支付 ¥${this.money(this.active?.feeAmount)}`
     }
   },
-  onLoad() { this.loadNotificationSettings() },
-  onShow() { this.load() },
+  onLoad(options) {
+    const eventId = Number(options?.eventId || 0)
+    this.requestedEventId = eventId > 0 ? eventId : null
+    this.loadNotificationSettings()
+  },
+  onShow() { this.pageVisible = true; this.load() },
+  onHide() { this.pageVisible = false; this.stopPaymentCountdown(); this.stopBookingPoll() },
+  onUnload() { this.pageVisible = false; this.stopPaymentCountdown(); this.stopBookingPoll() },
   methods: {
     async load() {
       this.loading = true; this.error = ''
@@ -114,16 +141,25 @@ export default {
           try { this.me = await appRequest({ url: '/app/me', redirectOnUnauthorized: false }) } catch (error) { this.authenticated = false; this.me = {} }
         }
         this.events = await (this.authenticated ? appRequest({ url: '/app/benefit-events', redirectOnUnauthorized: false }) : publicRequest({ url: '/app/benefit-events' }))
-        const target = this.events.find(item => item.eventId === this.activeId) || this.events[0]
+        const target = this.events.find(item => Number(item.eventId) === Number(this.requestedEventId))
+          || this.events.find(item => item.eventId === this.activeId) || this.events[0]
+        this.requestedEventId = null
         if (target) await this.loadEvent(target.eventId, false)
         else { this.active = null; this.activeId = null }
       } catch (error) { this.error = (error && error.message) || '暂时无法读取福利钓场次' }
       finally { this.loading = false }
     },
     async loadEvent(eventId, reset = true) {
+      const wasPending = this.isPaymentPending
       const data = await (this.authenticated ? appRequest({ url: `/app/benefit-events/${eventId}`, redirectOnUnauthorized: false }) : publicRequest({ url: `/app/benefit-events/${eventId}` }))
       this.active = data; this.activeId = data.eventId
-      if (reset) { this.selectedSeat = null; this.pendingPayment = null; this.announcementConfirmed = false }
+      if (data.myBookingStatus === '报名确认中' && data.mySeatNo) {
+        this.selectedSeat = Number(data.mySeatNo)
+        this.announcementConfirmed = true
+      } else if (reset || wasPending) {
+        this.selectedSeat = null; this.pendingPayment = null; this.announcementConfirmed = false
+      }
+      this.startPaymentCountdown(data.myPaymentRemainingSeconds)
     },
     async chooseEvent(item) {
       if (item.eventId === this.activeId && this.announcementConfirmed) return
@@ -139,32 +175,63 @@ export default {
       if (!this.authenticated) { uni.navigateTo({ url: '/pages/login/login?redirect=benefit' }); return }
       if (!this.me.mobileVerified) { uni.showToast({ title: '请先验证微信手机号', icon: 'none' }); return }
       if (!this.canSubmit || this.paying) return
-      if (this.pendingPayment) { this.requestPayment(this.pendingPayment); return }
-      const consent = await this.requestNoticeConsent()
       this.paying = true
       try {
         await ensureMemberSession()
+        if (this.isPaymentPending) {
+          if (this.paymentRemainingSeconds <= 0) {
+            await this.loadEvent(this.activeId, false)
+            if (this.isPaymentPending) uni.showToast({ title: '锁座状态正在同步，请稍后刷新', icon: 'none' })
+            this.paying = false
+            return
+          }
+          const payment = await appRequest({ url: `/app/benefit-bookings/${encodeURIComponent(this.active.myBookingNo)}/payment`, method: 'POST' })
+          if (payment.paid) { await this.finishPaidBooking(); return }
+          this.pendingPayment = payment
+          this.requestPayment(payment)
+          return
+        }
+        if (this.pendingPayment) { this.requestPayment(this.pendingPayment); return }
+        const consent = await this.requestNoticeConsent()
         const payment = await appRequest({ url: `/app/benefit-events/${this.activeId}/bookings/payment`, method: 'POST', data: { seatNo: this.selectedSeat, announcementVersion: this.active.announcementVersion, announcementConfirmed: true, startNoticeAccepted: consent.start, cancelNoticeAccepted: consent.cancel } })
-        if (payment.demoPayment && payment.paid) { uni.showToast({ title: '报名成功', icon: 'success' }); await this.loadEvent(this.activeId, false); return }
+        if (payment.paid) { await this.finishPaidBooking(); return }
         this.pendingPayment = payment
         this.requestPayment(payment)
-      } catch (error) { showRequestError(error) }
-      finally { this.paying = false }
+      } catch (error) {
+        this.paying = false
+        showRequestError(error)
+        await this.loadEvent(this.activeId, false).catch(() => {})
+      }
     },
     requestPayment(payment) {
       this.paying = true
       uni.requestPayment({ ...payment,
         success: () => { uni.showToast({ title: '付款完成，正在确认报名', icon: 'none' }); this.waitForBooking(0) },
-        fail: () => { uni.showToast({ title: '支付未完成，座位保留5分钟', icon: 'none' }); this.paying = false }
+        fail: () => {
+          uni.showToast({ title: '支付未完成，可在保留时间内继续支付', icon: 'none' })
+          this.paying = false
+          this.loadEvent(this.activeId, false).catch(() => {})
+        }
       })
     },
-    async waitForBooking(attempt) {
+    async finishPaidBooking() {
+      this.stopBookingPoll()
+      this.pendingPayment = null; this.selectedSeat = null
       try {
         await this.loadEvent(this.activeId, false)
-        if (this.active.myBookingStatus === '已报名') { this.pendingPayment = null; this.selectedSeat = null; this.paying = false; uni.showToast({ title: '报名成功', icon: 'success' }); return }
+        const booked = this.active?.myBookingStatus === '已报名'
+        uni.showToast({ title: booked ? '报名成功' : '状态已同步', icon: booked ? 'success' : 'none' })
+      } finally { this.paying = false }
+    },
+    async waitForBooking(attempt) {
+      if (!this.pageVisible) { this.paying = false; this.stopBookingPoll(); return }
+      try {
+        await this.loadEvent(this.activeId, false)
+        if (this.active.myBookingStatus === '已报名') { this.stopBookingPoll(); this.pendingPayment = null; this.selectedSeat = null; this.paying = false; uni.showToast({ title: '报名成功', icon: 'success' }); return }
       } catch (error) {}
-      if (attempt >= 5) { this.paying = false; uni.showModal({ title: '报名正在确认', content: '微信支付结果正在同步，请稍后在“我的报名”中查看。', showCancel: false, confirmColor: '#0B756E' }); return }
-      setTimeout(() => this.waitForBooking(attempt + 1), 1000)
+      if (attempt >= 5) { this.stopBookingPoll(); this.paying = false; uni.showModal({ title: '报名正在确认', content: '微信支付结果正在同步，请稍后在“我的报名”中查看。', showCancel: false, confirmColor: '#0B756E' }); return }
+      this.stopBookingPoll()
+      this.bookingPollTimer = setTimeout(() => this.waitForBooking(attempt + 1), 1000)
     },
     async loadNotificationSettings() {
       try { const data = await publicRequest({ url: '/app/notification-settings' }); this.startTemplateId = data.benefitStartTemplateId || ''; this.cancelTemplateId = data.benefitCancelTemplateId || '' } catch (error) {}
@@ -178,6 +245,31 @@ export default {
       const code = event?.detail?.code
       if (!code) { uni.showToast({ title: '未完成手机号授权', icon: 'none' }); return }
       try { this.me = await appRequest({ url: '/app/me/wechat-mobile', method: 'POST', data: { code } }); uni.showToast({ title: '手机号已确认', icon: 'success' }) } catch (error) { showRequestError(error) }
+    },
+    startPaymentCountdown(value) {
+      this.stopPaymentCountdown()
+      this.paymentRemainingSeconds = Math.max(0, Number(value || 0))
+      if (!this.isPaymentPending || this.paymentRemainingSeconds <= 0) return
+      this.paymentTimer = setInterval(() => {
+        this.paymentRemainingSeconds = Math.max(0, this.paymentRemainingSeconds - 1)
+        if (this.paymentRemainingSeconds === 0) {
+          this.stopPaymentCountdown()
+          if (this.isPaymentPending && this.activeId) this.loadEvent(this.activeId, false).catch(() => {})
+        }
+      }, 1000)
+    },
+    stopPaymentCountdown() {
+      if (this.paymentTimer) clearInterval(this.paymentTimer)
+      this.paymentTimer = null
+    },
+    stopBookingPoll() {
+      if (this.bookingPollTimer) clearTimeout(this.bookingPollTimer)
+      this.bookingPollTimer = null
+    },
+    countdownText(value) {
+      const seconds = Math.max(0, Number(value || 0))
+      const minutes = Math.floor(seconds / 60)
+      return `${String(minutes).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
     },
     money(value) { return Number(value || 0).toFixed(2) },
     openHistory() { if (!this.authenticated) uni.navigateTo({ url: '/pages/login/login?redirect=benefit' }); else uni.navigateTo({ url: '/pages/benefit/history' }) },
@@ -198,4 +290,6 @@ export default {
 .portrait-map .pool-middle{display:grid;grid-template-columns:88rpx minmax(0,1fr) 88rpx;align-items:stretch;gap:12rpx;margin:12rpx 0}
 .long-seats{display:grid;grid-template-rows:repeat(9,88rpx);gap:9rpx}
 .portrait-map .pool{min-height:864rpx}
+.my-current>view{display:flex;min-width:0;flex:1;flex-direction:column;gap:5rpx}
+.my-current>view text+text{color:#5b746e;font-size:19rpx;line-height:1.45}
 </style>
