@@ -61,7 +61,7 @@
 
       <view class="benefit-entry" @click="go('/pages/benefit/benefit')">
         <view class="benefit-entry-icon"><xy-icon name="medal" :size="48" color="#A26322" :weight="1.8" /></view>
-        <view class="reservation-copy"><text class="entry-title">福利钓专场</text><text class="entry-subtitle">20:15开场 · 22座池型选位 · ¥100/位</text></view>
+        <view class="reservation-copy"><text class="entry-title">福利钓专场</text><text class="entry-subtitle">20:15开场 · 22座池型选位</text></view>
         <view class="benefit-entry-action"><text>查看场次</text><xy-icon name="chevron-right" :size="30" color="#8A5A27" :weight="1.8" /></view>
       </view>
 
