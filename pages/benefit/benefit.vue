@@ -4,7 +4,7 @@
 
     <scroll-view scroll-y class="page-scroll">
       <view class="intro">
-        <view><text class="intro-kicker">每日福利钓</text><text class="intro-title">选一席，等你开钓</text><text class="intro-note">20:15–22:15 · 19:30截止 · ¥100/位</text></view>
+        <view><text class="intro-kicker">每日福利钓</text><text class="intro-title">选一席，等你开钓</text><text class="intro-note">20:15–22:15 · 19:30截止 · 每场独立定价</text></view>
         <view class="intro-mark"><xy-icon name="medal" :size="58" color="#F8EBD4" :weight="1.6" /></view>
       </view>
 
@@ -33,7 +33,7 @@
 
         <view v-if="active" class="event-summary">
           <view class="summary-main"><text>{{ fullDate(active.eventDate) }}</text><text>{{ active.storeName }}</text></view>
-          <view class="summary-stats"><view><text>{{ active.remainingCount }}</text><text>剩余位置</text></view><view><text>22</text><text>本场座位</text></view><view><text>19:30</text><text>报名截止</text></view></view>
+          <view class="summary-stats"><view><text>¥{{ money(active.feeAmount) }}</text><text>报名费</text></view><view><text>{{ active.remainingCount }}</text><text>剩余位置</text></view><view><text>19:30</text><text>报名截止</text></view></view>
           <view class="announcement-preview"><view><xy-icon name="bell" :size="31" color="#8A5A27" /><text>本场公告</text></view><text>{{ active.announcement }}</text><button @click="openAnnouncement">完整阅读</button></view>
         </view>
 
@@ -64,14 +64,14 @@
     </scroll-view>
 
     <view v-if="active && announcementConfirmed" class="action-bar">
-      <view><text>{{ selectedSeat ? `${selectedSeat}号座位` : '请选择座位' }}</text><text>{{ selectedSeat ? '应付 ¥100.00' : active.displayStatus }}</text></view>
+      <view><text>{{ selectedSeat ? `${selectedSeat}号座位` : '请选择座位' }}</text><text>{{ selectedSeat ? `应付 ¥${money(active.feeAmount)}` : active.displayStatus }}</text></view>
       <button :disabled="!canSubmit || paying" :loading="paying" @click="pay">{{ submitText }}</button>
     </view>
 
     <view v-if="announcementOpen" class="notice-overlay" @click.self="announcementOpen=false">
       <view class="notice-sheet">
         <view class="notice-head"><view><text>福利钓专场公告</text><text>{{ active.eventDate }} · 20:15–22:15</text></view><button aria-label="关闭公告" @click="announcementOpen=false"><xy-icon name="close" :size="32" color="#60756F" /></button></view>
-        <scroll-view scroll-y class="notice-scroll"><text>{{ active.announcement }}</text><view class="notice-rule"><text>报名截止</text><text>当天19:30</text></view><view class="notice-rule"><text>报名费用</text><text>¥100/位</text></view><view class="notice-rule"><text>报名限制</text><text>每位用户本场限报一个位置</text></view><view class="notice-rule"><text>报名说明</text><text>报名成功后不可自行取消，如有特殊情况请联系商家。</text></view></scroll-view>
+        <scroll-view scroll-y class="notice-scroll"><text>{{ active.announcement }}</text><view class="notice-rule"><text>报名截止</text><text>当天19:30</text></view><view class="notice-rule"><text>报名费用</text><text>¥{{ money(active.feeAmount) }}/位</text></view><view class="notice-rule"><text>报名限制</text><text>每位用户本场限报一个位置</text></view><view class="notice-rule"><text>报名说明</text><text>报名成功后不可自行取消，如有特殊情况请联系商家。</text></view></scroll-view>
         <button class="notice-confirm" @click="confirmAnnouncement">我已阅读并确认公告</button>
       </view>
     </view>
@@ -100,7 +100,7 @@ export default {
       if (!this.authenticated) return '登录后报名'
       if (!this.me.mobileVerified) return '请先验证手机号'
       if (!this.selectedSeat) return '选择一个座位'
-      return this.pendingPayment ? '继续微信支付' : '微信支付 ¥100'
+      return this.pendingPayment ? '继续微信支付' : `微信支付 ¥${this.money(this.active?.feeAmount)}`
     }
   },
   onLoad() { this.loadNotificationSettings() },
@@ -179,6 +179,7 @@ export default {
       if (!code) { uni.showToast({ title: '未完成手机号授权', icon: 'none' }); return }
       try { this.me = await appRequest({ url: '/app/me/wechat-mobile', method: 'POST', data: { code } }); uni.showToast({ title: '手机号已确认', icon: 'success' }) } catch (error) { showRequestError(error) }
     },
+    money(value) { return Number(value || 0).toFixed(2) },
     openHistory() { if (!this.authenticated) uni.navigateTo({ url: '/pages/login/login?redirect=benefit' }); else uni.navigateTo({ url: '/pages/benefit/history' }) },
     weekName(value) { const date = new Date(`${value}T12:00:00`); const names = ['周日','周一','周二','周三','周四','周五','周六']; const today = new Date(); return date.toDateString() === today.toDateString() ? '今天' : names[date.getDay()] },
     dayNumber(value) { return Number(String(value).split('-')[2]) },

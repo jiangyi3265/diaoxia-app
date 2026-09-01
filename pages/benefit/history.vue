@@ -7,7 +7,7 @@
       <view v-else-if="records.length" class="records">
         <view v-for="item in records" :key="item.bookingNo" class="record">
           <view class="record-top"><view><text>{{ formatDate(item.eventDate) }}</text><text>{{ item.startTime }}–{{ item.endTime }}</text></view><text class="status" :class="statusClass(item.displayStatus)">{{ item.displayStatus }}</text></view>
-          <view class="record-main"><view class="seat"><text>{{ item.seatNo }}</text><text>座位</text></view><view class="info"><text>{{ item.storeName }}</text><text>{{ item.address }}</text><text>报名编号 {{ item.bookingNo }}</text></view></view>
+          <view class="record-main"><view class="seat"><text>{{ item.seatNo }}</text><text>座位</text></view><view class="info"><text>{{ item.storeName }}</text><text>{{ item.address }}</text><text>报名费 ¥{{ money(item.feeAmount) }} · 编号 {{ item.bookingNo }}</text></view></view>
           <view v-if="item.displayStatus === '已报名'" class="arrival"><xy-icon name="clock" :size="29" color="#0B756E" /><text>请留意专场通知，并于20:15前到店。</text></view>
           <view v-else-if="item.displayStatus === '专场已取消'" class="arrival muted"><xy-icon name="info" :size="29" color="#7C8E89" /><text>本场福利钓专场已取消，详情请联系商家。</text></view>
         </view>
@@ -26,6 +26,7 @@ export default {
   methods: {
     async load() { this.loading = true; this.error = ''; try { await ensureMemberSession(); this.records = await appRequest({ url: '/app/benefit-bookings' }) } catch (error) { this.error = (error && error.message) || '暂时无法读取报名记录' } finally { this.loading = false } },
     formatDate(value) { const [y,m,d] = String(value).split('-'); return `${y}年${Number(m)}月${Number(d)}日` },
+    money(value) { return Number(value || 0).toFixed(2) },
     statusClass(value) { return value === '已报名' ? 'active' : value === '报名确认中' ? 'pending' : 'muted' },
     goBenefit() { uni.redirectTo({ url: '/pages/benefit/benefit' }) }
   }
